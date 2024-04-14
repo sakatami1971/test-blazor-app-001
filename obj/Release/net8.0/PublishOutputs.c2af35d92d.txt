@@ -1,0 +1,8 @@
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\BlazorSample.exe
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\appsettings.Development.json
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\appsettings.json
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\BlazorSample.dll
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\BlazorSample.deps.json
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\BlazorSample.runtimeconfig.json
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\BlazorSample.pdb
+C:\DevDocs\BlazorSample\bin\Release\net8.0\publish\MatBlazor.dll

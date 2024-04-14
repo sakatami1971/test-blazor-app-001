@@ -1,0 +1,5 @@
+{
+    "appService.preDeployTask": "publish-release",
+    "appService.deploySubpath": "bin\\Release\\net8.0\\publish",
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/c0df7b14-41cd-4832-8663-3d9800fec2af/resourceGroups/appsvc_windows_centralus/providers/Microsoft.Web/sites/test-blazor-web-app-001"
+}

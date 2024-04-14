@@ -1,0 +1,69 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">メニュー</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> 共通
+            </NavLink>
+            <ul>
+                <li><NavLink class="nav-link" href="login"> 
+                    <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> ログイン画面
+                </NavLink></li>
+            </ul>
+        </div>
+
+        @if (isLogin)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> 運転日報関連
+                </NavLink>
+                <ul>
+                    <li><NavLink class="nav-link" href="nippoulist"> 
+                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> 運転日報入力確認
+                    </NavLink></li>
+                </ul>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> フェリー会社請求関連
+                </NavLink>
+                <ul>
+                    <li><NavLink class="nav-link" href="ferryimport"> 
+                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> csv取り込み
+                    </NavLink></li>
+                    <li><NavLink class="nav-link" href="ferry"> 
+                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> 請求入力
+                    </NavLink></li>
+                </ul>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> 高速会社請求関連
+                </NavLink>
+                <ul>
+                    <li><NavLink class="nav-link" href="highwayimport"> 
+                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> csv取り込み
+                    </NavLink></li>
+                    <li><NavLink class="nav-link" href="highway"> 
+                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> 請求入力
+                    </NavLink></li>
+                </ul>
+            </div>
+        }
+    </nav>
+</div>
+
+@code{
+    public bool isLogin = true;
+
+}

@@ -1,0 +1,32 @@
+@page "/login"
+@attribute [StreamRendering]
+@using Microsoft.AspNetCore.Components.Web
+@using MatBlazor
+@inject IJSRuntime JsRuntime
+@rendermode InteractiveServer
+
+<h1>ログイン確認</h1>
+        <p>
+            <MatTextField Type="text" @bind-Value="UserName" Dense="true" Label="ユーザ名"></MatTextField>
+        </p>
+        <p>
+            <MatTextField Type="password" Icon="lock_outline" IconTrailing="true" Required="true"  @bind-Value="Password" Dense="true" Label="パスワード"></MatTextField>
+        </p>
+        <p>
+            <MatButton class="btn btn-primary" style="margin-left:5px" Outlined="true"  @onclick="OnClickButton">確認</MatButton >
+        </p>
+
+        @code
+        {
+            string UserName;
+            string Password;
+            protected override async Task OnInitializedAsync()
+            {
+                await Task.Delay(100);
+            }
+
+            private void OnClickButton()
+            {
+                JsRuntime.InvokeAsync<object>("window.alert", UserName + ":" + Password);
+            }
+        }
