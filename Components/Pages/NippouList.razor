@@ -20,14 +20,6 @@
     </MatSelectItem>
     <MatStringField  ReadOnly="true" Label="乗務員名" Value=@(assetCrewNo?.Name)></MatStringField >
 </p>
-<p>
-    <MatTextField type="number" label="出勤日数" @bind-Value="WorkingDays" />
-    <MatTextField type="number" label="半日日数" @bind-Value="HalfWorkingDays" />
-    <MatTextField type="number" label="日当日数" @bind-Value="DailyAllowanceDays" />
-    <MatTextField type="number" label="運行貸付金" @bind-Value="DailyAllowanceDays" />
-    <MatTextField type="number" label="安全手当" @bind-Value="DailyAllowanceDays" />
-    <MatTextField type="number" label="安全違反" @bind-Value="DailyAllowanceDays" />
-</p>
 <p>    
     <MatButton class="btn btn-primary" style="margin-left:5px" Outlined="true"  @onclick="OnUpdateSummary">検索実行</MatButton >
     <MatButton @onclick="OnOpenDetailDialog" Outlined="true">追加</MatButton>
@@ -40,23 +32,31 @@
 }
 else
 {
+<p>
+    <MatTextField style="width: 100px" type="number" label="出勤日数" @bind-Value="WorkingDays" />
+    <MatTextField style="width: 100px" type="number" label="半日日数" @bind-Value="HalfWorkingDays" />
+    <MatTextField style="width: 100px" type="number" label="日当日数" @bind-Value="DailyAllowanceDays" />
+    <MatTextField style="width: 120px" type="number" label="運行貸付金" @bind-Value="Operationloan" />
+    <MatTextField style="width: 120px" type="number" label="安全手当" @bind-Value="SafetyAllowance" />
+    <MatTextField style="width: 120px" type="number" label="安全違反" @bind-Value="SafetyViolation" />
+</p>
     <MatTable  Items="@forecasts" class="mat-elevation-z5" Striped="true" UseSortHeaderRow="true" ShowPaging="true" style="color: mediumpurple; font-size: 12px;">
         <MatTableHeader>
-            <th><div style="width: 20px">選択</div></th>
-            <th><div style="width: 100px">運行日付</div></th>
-            <th><div style="width: 50px">車番</div></th>
-            <th><div style="width: 50px">例外勤務</div></th>
-            <th><div style="width: 50px">キロ数</div></th>
-            <th><div style="width: 50px">差引売計</div></th>
-            <th><div style="width: 50px">歩 合</div></th>
-            <th><div style="width: 50px">混載手当</div></th>
-            <th><div style="width: 50px">荷扱手当</div></th>
-            <th><div style="width: 50px">助手手当</div></th>
-            <th><div style="width: 50px">空車手当</div></th>
-            <th><div style="width: 50px">作業手当</div></th>
-            <th><div style="width: 50px">立替金</div></th>
-            <th><div style="width: 50px">高速代</div></th>
-            <th><div style="width: 100px">備考</div></th>
+            <th><div style="width: 30px"><span class="headr-item-1">選択</span></div></th>
+            <th><div style="width: 80px"><span class="headr-item-1">運行日付</span></div></th>
+            <th><div style="width: 50px"><span class="headr-item-1">車番</span></div></th>
+            <th><div style="width: 70px"><span class="headr-item-1">例外勤務</span></div></th>
+            <th><div style="width: 50px"><span class="headr-item-1">キロ数</span></div></th>
+            <th><div style="width: 70px"><span class="headr-item-1">差引売計</span></div></th>
+            <th><div style="width: 50px"><span class="headr-item-1">歩 合</span></div></th>
+            <th><div style="width: 70px"><span class="headr-item-1">混載手当</span></div></th>
+            <th><div style="width: 70px"><span class="headr-item-1">荷扱手当</span></div></th>
+            <th><div style="width: 70px"><span class="headr-item-1">助手手当</span></div></th>
+            <th><div style="width: 70px"><span class="headr-item-1">空車手当</span></div></th>
+            <th><div style="width: 70px"><span class="headr-item-1">作業手当</span></div></th>
+            <th><div style="width: 50px"><span class="headr-item-1">立替金</span></div></th>
+            <th><div style="width: 50px"><span class="headr-item-1">高速代</span></div></th>
+            <th><div style="width: 100px"><span class="headr-item-1">備考</span></div></th>
         </MatTableHeader>
         <MatTableRow>
             <td><MatCheckbox @bind-Value="@context.Selected"></MatCheckbox></td>
@@ -89,11 +89,11 @@ else
 
 @code
 {
-    CrewItemType assetCrewNo;
-
+    CrewItemType? assetCrewNo;
 
     CrewItemType[] crewNoList = new[]
     {
+        new CrewItemType("", ""),
         new CrewItemType("2000", "CrewA"),
         new CrewItemType("2001", "Crew B"),
         new CrewItemType("2002", "Crew C"),
@@ -115,11 +115,14 @@ else
 }
 
 @code {
-    private List<NippouForecast> forecasts;
+    private List<NippouForecast>? forecasts;
     private int SalaryYYYYMM;
     private int WorkingDays;
     private int HalfWorkingDays;
     private int DailyAllowanceDays;
+    private int Operationloan;
+    private int SafetyAllowance;
+    private int SafetyViolation;
 
     public int Value { get; set; } = 1;
 
