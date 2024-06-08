@@ -1,1 +1,37 @@
 @page "/"
+@using Common
+@inject IDialogService DialogService
+
+<PageTitle>Home</PageTitle>
+<MudDialogProvider
+    FullWidth="true"
+    MaxWidth="MaxWidth.ExtraSmall"
+    CloseButton="false"
+    DisableBackdropClick="true"
+    NoHeader="false"
+    Position="DialogPosition.CenterLeft"
+    CloseOnEscapeKey="false"
+/>
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(200);
+
+        OpenDialog();
+    }
+    private void OpenDialog()
+    {
+        if (!CommonDef._isOpen)
+        {
+            CommonDef._isOpen = true;
+        }else{
+            var options = new DialogOptions { ClassBackground = "my-custom-class"};
+            DialogService.Show<LoginDialog>("ÉçÉOÉCÉìâÊñ ", options);
+        }
+    }
+}

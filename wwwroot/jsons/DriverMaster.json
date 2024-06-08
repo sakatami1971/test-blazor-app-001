@@ -1,0 +1,34 @@
+[
+    {
+        "No": "",
+        "Name": "",
+        "Commission": 0,
+        "BasicOperatingDays":0,
+        "BasicHalfDayUnitPrice":0,
+        "BasicDailyUnitPrice":0
+    },
+    {
+        "No": "2000",
+        "Name": "ドライバーA",
+        "Commission": 10,
+        "BasicOperatingDays":20,
+        "BasicHalfDayUnitPrice":3000,
+        "BasicDailyUnitPrice":6000
+    },
+    {
+        "No": "2001",
+        "Name": "ドライバーB",
+        "Commission": 11,
+        "BasicOperatingDays":20,
+        "BasicHalfDayUnitPrice":3100,
+        "BasicDailyUnitPrice":6250
+    },
+    {
+        "No": "2002",
+        "Name": "ドライバーC",
+        "Commission": 12,
+        "BasicOperatingDays":20,
+        "BasicHalfDayUnitPrice":3200,
+        "BasicDailyUnitPrice":6300
+    }
+  ]

@@ -1,0 +1,37 @@
+[
+    {
+        "No": 1,
+        "Select": 0,
+        "DateOfBoarding": "05/04 - 05/04",
+        "CarNo": "1000",
+        "Exception": "待機",
+        "Distance": 100,
+        "NetSalesTotal": 0,
+        "Commission": 0,
+        "ConsolidationAllowance": 0,
+        "CargoHandlingAllowance": 0,
+        "AssistantAllowance": 0,
+        "EmptyCarAllowance": 0,
+        "WorkAllowance": 0,
+        "AdvancePayment": 0,
+        "HighwayPayment": 0
+    },
+    {
+        "No": 2,
+        "Select": 1,
+        "DateOfBoarding": "05/04 - 05/04",
+        "CarNo": "1000",
+        "Exception": "",
+        "Distance": 110,
+        "NetSalesTotal": 0,
+        "Commission": 0,
+        "ConsolidationAllowance": 0,
+        "CargoHandlingAllowance": 0,
+        "AssistantAllowance": 0,
+        "EmptyCarAllowance": 0,
+        "WorkAllowance": 0,
+        "AdvancePayment": 0,
+        "HighwayPayment": 0
+    }
+
+  ]

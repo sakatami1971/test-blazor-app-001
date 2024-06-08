@@ -1,0 +1,359 @@
+@page "/driveinfolist"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Mvc.RazorPages
+@using Common
+@using Data
+@rendermode InteractiveServer
+@inject ISnackbar Snackbar
+
+<style>
+.align-right input{
+    text-align: right;
+}</style>
+
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudGrid Spacing="@spacing" Justify="Justify.Center">
+    <MudItem>
+        <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:center;">
+            <MudPaper Class="" Height="180px" Width="200px" Elevation="@elevation">
+                <MudTextField T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="給与年月(yyyymm)" @bind-Value="DateOfSalary"/>
+                <MudSelect T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Label="乗務員No." Style="Width:100px" ValueChanged="OnChangedDriverNo">
+                    @if (DriverElementList != null)
+                    {
+                        @foreach (var item in DriverElementList)
+                        {
+                            <MudSelectItem T="string" Value="@item.No"></MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+                <label style="width:100px;height:30px;margin-top:10px;">@DriverInfo.Name</label>
+                <MudIconButton Icon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Color="Color.Secondary"
+                 OnClick="OnClickSearch" Style="Width:200px;height:40px"/>
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="200px" Elevation="@elevation">
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px;text-align: right;" Label="基本操業日数" @bind-Value="DriverInfo.BasicOperatingDays"/>
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px;text-align: right;" Label="基本半日単価" @bind-Value="DriverInfo.BasicHalfDayUnitPrice"/>
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="基本日額単価" @bind-Value="DriverInfo.BasicDailyUnitPrice"/>
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="100px" Elevation="@elevation">
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="200px" Elevation="@elevation">
+                <MudNumericField Class="align-right" ReadOnly="false" HideSpinButtons="false" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="出勤日数" @bind-Value="WorkingDays"/>
+                <MudNumericField Class="align-right" ReadOnly="false" HideSpinButtons="false" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="半日日数" @bind-Value="HalfDayNumber"/>
+                <MudNumericField Class="align-right" ReadOnly="false" HideSpinButtons="false" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="日当日数" @bind-Value="NumberOfDays"/>
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="200px" Elevation="@elevation">
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="旅費日当" @bind-Value="TravelExpensesPerDiem"/>
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="半日額" @bind-Value="HalfDayAmount"/>
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="日当額" @bind-Value="DailyAllowance"/>
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="200px" Elevation="@elevation">
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="基本給" @bind-Value="BasicSalary"/>
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="休日給" @bind-Value="HolidayPay"/>
+                <MudNumericField Class="align-right" ReadOnly="true" Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="日当合計" @bind-Value="TotalPerDiem"/>
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="100px" Elevation="@elevation">
+                <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:right;">
+                    <MudPaper Class="" Height="40px" Width="60px" Elevation="@elevation"></MudPaper>
+                    <MudIconButton Icon="@Icons.Material.Filled.Upload" Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"/>
+                </div>
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="200px" Elevation="@elevation">
+                <MudNumericField Class="align-right" ReadOnly="false" Format="N0" HideSpinButtons="false" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="運行貸付金" @bind-Value="OperationLoan"/>
+                <MudNumericField Class="align-right" ReadOnly="false" Format="N0" HideSpinButtons="false" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="安全手当" @bind-Value="SafetyAllowance"/>
+                <MudNumericField Class="align-right" ReadOnly="false" Format="N0" HideSpinButtons="false" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="安全違反" @bind-Value="SafetyViolation"/>
+            </MudPaper>
+            <MudPaper Class="" Height="180px" Width="100px" Elevation="@elevation">
+            </MudPaper>
+        </div>
+    </MudItem>
+
+    @if (_searchOn)
+    {
+    <MudItem>
+        <MudPaper Class="" Height="600px" Width="1600px" Elevation="@elevation">
+            <MudTable Items="@DriveInfoLists" HorizontalScrollbar="true" Dense="true" Hover="true" ReadOnly="false" CanCancelEdit="true"
+                    @bind-SelectedItem="selectedDriveInfoItem" SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+                    OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+                    RowEditPreview="BackupDriveInfoItem" RowEditCancel="ResetDriveInfoItemToOriginalValues"
+                    RowEditCommit="DriveInfoItemHasBeenCommitted" ApplyButtonPosition="TableApplyButtonPosition.Start"
+                    EditButtonPosition="TableEditButtonPosition.Start" EditTrigger="TableEditTrigger.RowClick">
+                <HeaderContent>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.Select)">確定</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary">詳細</MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.DateOfBoarding)">運行日付</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.CarNo)">車番</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.Exception)">例外</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.Distance)">距離</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.NetSalesTotal)">差引売計</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.Commission)">歩合</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.ConsolidationAllowance)">混載手当</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.CargoHandlingAllowance)">荷扱手当</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.AssistantAllowance)">助手手当</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.EmptyCarAllowance)">空車手当</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.WorkAllowance)">作業手当</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.AdvancePayment)">立替金</MudTableSortLabel></MudTh>
+                    <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<DriveInfoElement, object>(x=>x.HighwayPayment)">高速代</MudTableSortLabel></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="確定">
+                        <MudCheckBox Style="width:60px;" @bind-Value="@context.Select" Label="" Color="Color.Primary"></MudCheckBox>
+                    </MudTd>
+                    <MudTd DataLabel="詳細">
+                        <MudIconButton Icon="@Icons.Material.Filled.MoreHoriz" Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"
+                            Href="@($"http://localhost:5214/DriveInput/?No={context.No}")" OnClick="@((e)=> OnClickDetail(e, context.No))"></MudIconButton>
+                    </MudTd>
+                    <MudTd DataLabel="運行日付">
+                        <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.DateOfBoarding" Required />
+                    </MudTd>
+                    <MudTd DataLabel="車番">
+                        <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.CarNo" Required />
+                    </MudTd>
+                    <MudTd DataLabel="例外">
+                        <MudTextField Style="width:60px;" DisableUnderLine="true" @bind-Value="@context.Exception" Required />
+                    </MudTd>                        
+                    <MudTd DataLabel="距離">
+                       <MudNumericField Format="N0" HideSpinButtons="true"
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.Distance"/>
+                    </MudTd>
+                    <MudTd DataLabel="差引売計">
+                       <MudNumericField Format="N0" HideSpinButtons="true"
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.NetSalesTotal"/>
+                    </MudTd>
+                    <MudTd DataLabel="歩合">
+                       <MudNumericField Format="N0" HideSpinButtons="true"
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.Commission"/>
+                    </MudTd>
+                    <MudTd DataLabel="混載手当">
+                       <MudNumericField Format="N0" HideSpinButtons="true"
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.ConsolidationAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="荷扱手当">
+                       <MudNumericField Format="N0" HideSpinButtons="true" 
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.CargoHandlingAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="助手手当">
+                       <MudNumericField Format="N0" HideSpinButtons="true" 
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.AssistantAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="空車手当">
+                       <MudNumericField Format="N0" HideSpinButtons="true" 
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.EmptyCarAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="作業手当">
+                       <MudNumericField Format="N0" HideSpinButtons="true" 
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.WorkAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="立替金">
+                       <MudNumericField Format="N0" HideSpinButtons="true" 
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.AdvancePayment"/>
+                    </MudTd>
+                    <MudTd DataLabel="高速代">
+                        <MudNumericField Format="N0" HideSpinButtons="true" 
+                         ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.HighwayPayment"/>
+                    </MudTd>
+                </RowTemplate>
+                <RowEditingTemplate>
+                    <MudTd DataLabel="確定">
+                        <MudCheckBox @bind-Value="@context.Select" Label="" Color="Color.Primary"></MudCheckBox>
+                    </MudTd>
+                    <MudTd DataLabel="詳細">
+                    </MudTd>
+                    <MudTd DataLabel="運行日付">
+                        <MudTextField @bind-Value="@context.DateOfBoarding" Required />
+                    </MudTd>
+                    <MudTd DataLabel="車番">
+                        <MudTextField @bind-Value="@context.CarNo" Required />
+                    </MudTd>
+                    <MudTd DataLabel="例外">
+                        <MudSelect T="string" Label="" Style="Width:100px" @bind-Value="@context.Exception">
+                            @foreach (var item in ExceptionList)
+                            {
+                                <MudSelectItem T="string" Value="@item"></MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="距離">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.Distance" Required />
+                    </MudTd>
+                    <MudTd DataLabel="差引売計">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.NetSalesTotal"/>
+                    </MudTd>
+                    <MudTd DataLabel="歩合">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.Commission"/>
+                    </MudTd>
+                    <MudTd DataLabel="混載手当">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.ConsolidationAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="荷扱手当">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.CargoHandlingAllowance"/>
+                    </MudTd>    
+                    <MudTd DataLabel="助手手当">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.AssistantAllowance"/>
+                    </MudTd>    
+                    <MudTd DataLabel="空車手当">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.EmptyCarAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="作業手当">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.WorkAllowance"/>
+                    </MudTd>
+                    <MudTd DataLabel="立替金">
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@context.AdvancePayment"/>
+                    </MudTd>
+                    <MudTd DataLabel="高速代">
+                        <MudNumericField Format="N0" HideSpinButtons="true" Adornment="Adornment.Start" Style="width:100px;" @bind-Value="@context.HighwayPayment"/>
+                    </MudTd>
+                </RowEditingTemplate>
+            </MudTable>
+        </MudPaper>            
+    </MudItem>
+    }
+    </MudGrid>
+
+@code {
+    [Inject] private IDialogService DialogService { get; set; }    
+    private bool _searchOn = false;
+    public int elevation = 0;
+    public int spacing { get; set; } = 0;
+    private List<string> _events = new();
+    public string[] ExceptionList =
+    {
+       "", "待機", "その他"
+    };
+    private DriverMasterElement[]? DriverElementList;
+    public string? DateOfSalary { get; set; } 
+    public string? DriverNo { get; set; }
+    public DriverMasterElement DriverInfo { get; set; } = new DriverMasterElement();
+
+    public int WorkingDays{ get; set; }
+    public int HalfDayNumber{ get; set; }
+    public int NumberOfDays{ get; set; }
+    public int TravelExpensesPerDiem{ get; set; }
+    public int HalfDayAmount{ get; set; }
+    public int DailyAllowance{ get; set; }
+    public int BasicSalary{ get; set; }
+    public int HolidayPay{ get; set; }
+    public int TotalPerDiem{ get; set; }
+    public int OperationLoan{ get; set; }
+    public int SafetyAllowance{ get; set; }
+    public int SafetyViolation{ get; set; }
+
+    private DriveInfoElement[]? DriveInfoElementList;
+    private IEnumerable<DriveInfoElement> DriveInfoLists = new List<DriveInfoElement>();
+    private DriveInfoElement? selectedDriveInfoItem = null;
+    private DriveInfoElement? elementDriveInfoBeforeEdit = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(100);
+        DriveInfoElementList = await CommonDef.sharedClient.GetFromJsonAsync<DriveInfoElement[]>("jsons/DriveInfoList.json");
+        if (DriveInfoElementList != null)
+            DriveInfoLists = DriveInfoElementList;
+
+        DriverElementList = await CommonDef.sharedClient.GetFromJsonAsync<DriverMasterElement[]>("jsons/DriverMaster.json");
+
+    }
+
+    public void OnChangedDriverNo(string value)
+    {
+        foreach (var item in DriverElementList)
+        {
+            if (value == item.No)
+            {
+                DriverInfo = item;
+                DriverNo = value;
+                break;
+            }
+        }
+    }
+    public async void OnClickSearch()
+    {
+        if (DateOfSalary == null || DriverNo == null)
+        {
+            await DialogService.ShowMessageBox(
+                "Warning", 
+                "給与年月、乗務員Noが入力されているか確認してください。",
+                yesText:"OK");
+            return;
+        }
+        _searchOn = !_searchOn;
+    }
+    public void OnClickDetail(MouseEventArgs e, int No)
+    {
+    }
+    public async Task OnIsOpenChanged (bool isOpen)
+    {
+    }
+
+    private void AddDriveInfoEditionEvent(string message)
+    {
+        _events.Add(message);
+        StateHasChanged();
+    }
+    private void BackupDriveInfoItem(object element)
+    {
+        elementDriveInfoBeforeEdit = new()
+            {
+                Select = ((DriveInfoElement)element).Select,
+                DateOfBoarding = ((DriveInfoElement)element).DateOfBoarding,
+                CarNo = ((DriveInfoElement)element).CarNo,
+                Exception = ((DriveInfoElement)element).Exception,
+                Distance = ((DriveInfoElement)element).Distance,
+                NetSalesTotal = ((DriveInfoElement)element).NetSalesTotal,
+                Commission = ((DriveInfoElement)element).Commission,
+                ConsolidationAllowance = ((DriveInfoElement)element).ConsolidationAllowance,
+                CargoHandlingAllowance = ((DriveInfoElement)element).CargoHandlingAllowance,
+                AssistantAllowance = ((DriveInfoElement)element).AssistantAllowance,
+                EmptyCarAllowance = ((DriveInfoElement)element).EmptyCarAllowance,
+                WorkAllowance = ((DriveInfoElement)element).WorkAllowance,
+                AdvancePayment = ((DriveInfoElement)element).AdvancePayment,
+                HighwayPayment = ((DriveInfoElement)element).HighwayPayment
+            };
+        AddDriveInfoEditionEvent($"RowEditPreview event: made a backup of Element {((DriveInfoElement)element).DateOfBoarding}");
+    }
+    private void DriveInfoItemHasBeenCommitted(object element)
+    {
+        AddDriveInfoEditionEvent($"RowEditCommit event: Changes to Element {((DriveInfoElement)element).DateOfBoarding} committed");
+    }
+    private void ResetDriveInfoItemToOriginalValues(object element)
+    {
+        if (elementDriveInfoBeforeEdit != null)
+        {
+            ((DriveInfoElement)element).Select = elementDriveInfoBeforeEdit.Select;
+            ((DriveInfoElement)element).DateOfBoarding = elementDriveInfoBeforeEdit.DateOfBoarding;
+            ((DriveInfoElement)element).CarNo = elementDriveInfoBeforeEdit.CarNo;
+            ((DriveInfoElement)element).Exception = elementDriveInfoBeforeEdit.Exception;
+            ((DriveInfoElement)element).Distance = elementDriveInfoBeforeEdit.Distance;
+            ((DriveInfoElement)element).NetSalesTotal = elementDriveInfoBeforeEdit.NetSalesTotal;
+            ((DriveInfoElement)element).Commission = elementDriveInfoBeforeEdit.Commission;
+            ((DriveInfoElement)element).ConsolidationAllowance = elementDriveInfoBeforeEdit.ConsolidationAllowance;
+            ((DriveInfoElement)element).CargoHandlingAllowance = elementDriveInfoBeforeEdit.CargoHandlingAllowance;
+            ((DriveInfoElement)element).AssistantAllowance = elementDriveInfoBeforeEdit.AssistantAllowance;
+            ((DriveInfoElement)element).EmptyCarAllowance = elementDriveInfoBeforeEdit.EmptyCarAllowance;
+            ((DriveInfoElement)element).WorkAllowance = elementDriveInfoBeforeEdit.WorkAllowance;
+            ((DriveInfoElement)element).AdvancePayment = elementDriveInfoBeforeEdit.AdvancePayment;
+            ((DriveInfoElement)element).HighwayPayment = elementDriveInfoBeforeEdit.HighwayPayment;
+            AddDriveInfoEditionEvent($"RowEditCancel event: Editing of Element {((DriveInfoElement)element).DateOfBoarding} canceled");
+        }
+    }        
+}

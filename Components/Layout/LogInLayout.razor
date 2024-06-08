@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+
+<MudThemingProvider />
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudText Typo="Typo.h5" Class="ml-3">経理システム</MudText>
+    </MudAppBar>
+
+    <MudTextField style="width:200px;" Margin="Margin.Dense" @bind-Value="Username" Label="ユーザ名"
+    Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText=""/>
+    <MudTextField style="width:200px;" Margin="Margin.Dense" @bind-Value="Password" Label="パスワード"
+    Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon"
+    OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="SignIn">Sighn In</MudButton>
+</MudLayout>
+
+@code {
+    public bool SighnIn { get; set; } = false;
+
+    public string Username { get; set; } = "";
+    public string Password { get; set;} = "";
+
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    private void SignIn()
+    {
+        SighnIn = true;
+    }
+    void ButtonTestclick()
+    {
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+}

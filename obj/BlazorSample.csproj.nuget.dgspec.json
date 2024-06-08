@@ -45,9 +45,21 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "MatBlazor": {
+            "BlazorDownloadFile": {
               "target": "Package",
-              "version": "[2.10.0, )"
+              "version": "[2.3.1, )"
+            },
+            "CsvHelper": {
+              "target": "Package",
+              "version": "[27.2.1, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[8.0.6, )"
+            },
+            "MudBlazor": {
+              "target": "Package",
+              "version": "[6.*, )"
             }
           },
           "imports": [

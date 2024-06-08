@@ -1,0 +1,88 @@
+﻿@page "/ferrycheck"
+@using CSVReaders
+@using Common
+@using Data
+@rendermode InteractiveServer
+
+<style>
+.align-right input{
+    text-align: right;
+}</style>
+
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<PageTitle>フェリー会社請求照会</PageTitle>
+
+<MudText Typo="Typo.h5" GutterBottom="true">フェリー会社請求照会</MudText>
+
+<MudGrid Spacing="@spacing" Justify="Justify.Center">
+    <MudItem>
+        <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;">
+            <MudPaper Class="" Height="150px" Width="200px" Elevation="@elevation">
+                <MudTextField T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="支払月(yyyymm)" @bind-Value="PaymentMonth"/>
+                <MudPaper Class="" Height="10px" Width="200px" Elevation="@elevation"></MudPaper> 
+                <MudNumericField Class="align-right" Format="N0" Style="width:200px;height:45px" Variant="Variant.Outlined" Label="支払額合計" DisableUnderLine="true"
+                 HideSpinButtons="true" @bind-Value="@TotalPaymentAmount"/>
+            </MudPaper>
+            <MudPaper Class="" Height="150px" Width="300px" Elevation="@elevation">
+                <MudSelect T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                    Label="フェーリー会社名" Style="Width:200px" ValueChanged="OnChangedCompany">
+                    @if (FerryMasterElementList != null)
+                    {
+                        @foreach (var item in FerryMasterElementList)
+                        {
+                            <MudSelectItem T="string" Value="@item.Name"></MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+                <MudPaper Class="" Height="10px" Width="200px" Elevation="@elevation"></MudPaper> 
+                <MudNumericField Class="align-right" Format="N0" Style="width:200px;height:45px" Variant="Variant.Outlined" Label="売上額合計" DisableUnderLine="true"
+                HideSpinButtons="true" @bind-Value="@TotalSalesAmount"/>
+            </MudPaper>
+            <MudPaper Class="" Height="150px" Width="1100px" Elevation="@elevation">
+                <MudIconButton Icon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Color="Color.Secondary"
+                 OnClick="OnClickSearch" Style="Width:40px;height:40px"/>
+            </MudPaper>
+
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code{
+    public int elevation = 0;
+    public int spacing { get; set; } = 0;
+    public string ClassSuccess = "";
+    private string SelectedFerryCompany { get; set; }
+    private EnumFerryCompany SelectedFerryId { get; set; }     
+    private string PaymentMonth { get; set; }
+    private int TotalPaymentAmount { get; set; }
+    private int TotalSalesAmount { get; set; }
+    private FerryMasterElement[]? FerryMasterElementList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(100);
+        FerryMasterElementList = await CommonDef.sharedClient.GetFromJsonAsync<FerryMasterElement[]>("jsons/FerryMaster.json");
+    }
+
+    public void OnChangedCompany(string value)
+    {
+        SelectedFerryCompany = value;
+
+        foreach (var item in FerryMasterElementList)
+        {
+            if (item.Name == value)
+            {
+                SelectedFerryId = (EnumFerryCompany)(int.Parse(item.No)-1);
+                break;
+            }
+        }
+    }
+    public void OnClickSearch()
+    {
+    }
+
+}

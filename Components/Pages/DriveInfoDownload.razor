@@ -1,0 +1,143 @@
+﻿@page "/driveinfodownload"
+@using Common
+@using Data
+@using Controller
+@using Microsoft.EntityFrameworkCore;
+@inject IBlazorDownloadFileService BlazorDownloadFileService
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject ILogger<DriveInfoDownload> Logger
+@rendermode InteractiveServer
+
+<PageTitle>運転日報データダウンロード</PageTitle>
+
+<h1>運転日報データダウンロード</h1>
+
+<p>
+    運転日報データをCSV形式でダウンロードします。
+</p>
+
+<MudPopoverProvider />
+<MudDialogProvider/>
+<MudSnackbarProvider /> 
+<MudGrid Spacing="@spacing" Justify="Justify.Center">
+    <MudItem>
+        <MudPaper Class="" Height="10px" Width="1500px" Elevation="@elevation"></MudPaper> 
+        <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;">
+            <MudPaper Class="" Height="150px" Width="200px" Elevation="@elevation">
+                <MudTextField T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:200px" Label="給与年月(yyyymm)" @bind-Value="OperationDate"/>
+                <MudPaper Class="" Height="10px" Width="200px" Elevation="@elevation"></MudPaper> 
+                <MudButton Style="Width:110px;height:30px" Variant="Variant.Outlined" Color="Color.Primary" @onclick="DownloadExec">download</MudButton>
+            </MudPaper>
+            <MudPaper Class="" Height="150px" Width="200px" Elevation="@elevation">
+                <MudSelect T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"
+                 Label="車両No." Style="Width:100px" ValueChanged="OnChangedCarNo">
+                    @if (CarMasterElementList != null)
+                    {
+                        @foreach (var item in CarMasterElementList)
+                        {
+                            <MudSelectItem T="string" Style="Width:100px;height:10px" Value="@item.No"></MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudPaper>
+            <MudPaper Class="" Height="150px" Width="300px" Elevation="@elevation">
+                <label style="width:360px;height:30px;margin-top:10px;">@CarName</label> 
+            </MudPaper>
+            <MudPaper Class="" Height="150px" Width="900px" Elevation="@elevation">
+            </MudPaper>
+        </div>
+    </MudItem>
+</MudGrid> 
+ 
+@code {
+    [Inject] private IDialogService? DialogService { get; set; } 
+    public int elevation = 0;
+    public int spacing { get; set; } = 0; 
+    public string? OperationDate  { get; set; } 
+    public string? CarNo  { get; set; } 
+    public string CarName { get; set;  } = "";
+    private CarMasterElement[]? CarMasterElementList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(100);
+        CarMasterElementList = await CommonDef.sharedClient.GetFromJsonAsync<CarMasterElement[]>("jsons/CarMaster.json");
+    }
+
+    public void OnChangedCarNo(string value)
+    {
+        CarNo = value;
+        foreach (var item in CarMasterElementList)
+        {
+            if (value == item.No)
+            {
+                CarName = item.Name;
+                break;
+            }
+        }                
+    }
+    private async Task DownloadExec()
+    {
+        if ((OperationDate == null) || (CarNo == null))
+        {
+            await DialogService.ShowMessageBox(
+                "Warning", 
+                "給与年月、車両Noが入力されているか確認してください。",
+                yesText:"OK");
+            return;
+        }  
+
+        var csvList = new List<KYJY2P>();
+
+        try
+        {
+            //DBからデータを取得する.
+            using (var context = DbFactory.CreateDbContext())
+            {
+                var lists = context.KYJY2P
+                                .Where(b => (b.KJKYDT == int.Parse(OperationDate)) && (b.KJSYNO == int.Parse(CarNo)))
+                                .ToList();
+
+
+                if (lists.Count == 0)
+                {
+                    await DialogService.ShowMessageBox(
+                        "Warning", 
+                        "指定した給与年月、車両Noのデータが存在しません。確認してください。",
+                        yesText:"OK");
+                    return;
+                }
+
+                await DialogService.ShowMessageBox(
+                    "Information", 
+                    "指定した給与年月、車両Noのデータが" + lists.Count.ToString() + "件存在しました。ダウンロードを開始します。",
+                    yesText:"OK");
+
+                foreach (var info in lists)
+                {
+                    csvList.Add(info);
+                }
+            }
+    
+            using ( var memoryStream = new MemoryStream())
+            using ( var writer = new StreamWriter(memoryStream, Encoding.UTF8))
+            using ( var csv = new CsvWriter(writer, CultureInfo.CurrentCulture))
+            {
+                csv.WriteRecords(csvList);
+                writer.Flush();
+                var bytes = memoryStream.ToArray();
+    
+                string filename = $"{DateTime.Now.ToString("yyyyMMddhhmmss")}.csv";
+                var result = await BlazorDownloadFileService.DownloadFile(filename, bytes, System.Net.Mime.MediaTypeNames.Application.Octet);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogInformation(
+                "exception: {Message}", 
+                ex.Message);
+        }
+    }
+}
+

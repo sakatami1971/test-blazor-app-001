@@ -1,13 +1,22 @@
 using BlazorSample.Components;
-using MatBlazor;
+using MudBlazor.Services;
+using BlazorDownloadFile;
+using Controller;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
 builder.Services.AddHttpClient();
-builder.Services.AddMatBlazor();
+builder.Services.AddBlazorDownloadFile(ServiceLifetime.Scoped);
+
+// Database connection service
+builder.Services.AddDbContextFactory<AppDbContext>(
+    options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 

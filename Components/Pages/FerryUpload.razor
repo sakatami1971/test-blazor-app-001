@@ -1,0 +1,338 @@
+@page "/ferryupload"
+@using System.Net.Http.Headers
+@using System.Text.Json
+@using CSVReaders
+@using Common
+@using Data
+@rendermode InteractiveServer
+@inject IHttpClientFactory ClientFactory
+@inject ILogger<FerryUpload> Logger
+
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<style>
+.align-right input{
+    text-align: right;
+}</style>
+
+<PageTitle>フェリー会社請求データ取り込み</PageTitle>
+
+<h1>フェリー会社請求データ取り込み</h1>
+
+<p>
+    フェリー会社から入手した請求CSVデータを選択し、取り込みます。
+</p>
+
+<MudSelect T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+    Label="フェーリー会社名" Style="Width:200px" ValueChanged="OnChangedCompany">
+    @if (FerryMasterElementList != null)
+    {
+        @foreach (var item in FerryMasterElementList)
+        {
+            <MudSelectItem T="string" Value="@item.Name"></MudSelectItem>
+        }
+    }
+</MudSelect>
+
+<p>
+    <label>
+        <InputFile OnChange="OnInputFileChange" multiple />
+    </label>
+</p>
+
+@if (files.Count > 0)
+{
+    <MudPaper Height="10px" Width="1600px" Elevation="0"></MudPaper>
+    <MudButton Style="Width:110px;height:30px" Variant="Variant.Outlined" Color="Color.Primary">登録</MudButton>
+
+    <div class="card">
+        <div class="card-body">
+            <ul>
+                @foreach (var file in files)
+                {
+                    <li>
+                        <br>
+                        @if (FileUpload(SelectedFerryId, uploadResults, file.Name, Logger,
+                           out var result, ref BillAmountTotal))
+                        {
+                            <MudMenu ActivationEvent="@MouseEvent.RightClick">
+                            <ActivatorContent>
+
+                            <MudPaper Class="" Height="60px" Width="1600px" Elevation="0">
+                                <MudTable T="FerryCsvFormatElement" Items="@result.UploadDataList" HorizontalScrollbar="true" Dense="true" Hover="true" ReadOnly="true"
+                                 @ref="mudTable" RowClass="cursor-pointer"
+                                 Bordered="true" SortLabel="Sort By" FixedHeader="true" FixedFooter="true" Height="620px"
+                                 OnRowClick="RowClickEvent" RowClassFunc="@SelectedRowClassFunc">
+                                    <HeaderContent>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<FerryCsvFormatElement, object>(x=>x.BoardingDate)">乗船年月日</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<FerryCsvFormatElement, object>(x=>x.SeaRroute)">航路</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<FerryCsvFormatElement, object>(x=>x.CarNo)">車両番号</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<FerryCsvFormatElement, object>(x=>x.CarLength)">車両の長さ</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<FerryCsvFormatElement, object>(x=>x.BillAmountTotal)">請求額計</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<FerryCsvFormatElement, object>(x=>x.Remarks1)">備考1</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<FerryCsvFormatElement, object>(x=>x.Remarks2)">備考2</MudTableSortLabel></MudTh>
+                                    </HeaderContent>
+
+                                    <RowTemplate>
+                                        <MudTd DataLabel="乗船年月日">
+                                            <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.BoardingDate"/>
+                                        </MudTd>
+                                        <MudTd DataLabel="航路">
+                                            <MudTextField Style="width:200px;" DisableUnderLine="true" @bind-Value="@context.SeaRroute"  />
+                                        </MudTd>
+                                        <MudTd DataLabel="車両番号">
+                                            <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.CarNo"/>
+                                        </MudTd>                        
+                                        <MudTd DataLabel="車両の長さ">
+                                            <MudTextField Style="width:60px;" DisableUnderLine="true" @bind-Value="@context.CarLength"/>
+                                        </MudTd>
+                                        <MudTd DataLabel="請求額計">
+                                            <MudNumericField Class="align-right" Format="N0" Style="width:100px;" DisableUnderLine="true"
+                                             HideSpinButtons="true" @bind-Value="@context.BillAmountTotal"/>
+                                        </MudTd>                        
+                                        <MudTd DataLabel="備考1">
+                                            <MudTextField Style="width:60px;" DisableUnderLine="true" @bind-Value="@context.Remarks1"/>
+                                        </MudTd>
+                                        <MudTd DataLabel="備考2">
+                                            <MudTextField Style="width:150px;" DisableUnderLine="true" @bind-Value="@context.Remarks2"/>
+                                        </MudTd>
+                                    </RowTemplate>
+
+                                    <FooterContent>
+                                        <MudTh Class="mud-theme-primary">合計</MudTh>
+                                        <MudTh Class="mud-theme-primary"></MudTh>
+                                        <MudTh Class="mud-theme-primary"></MudTh>
+                                        <MudTh Class="mud-theme-primary"></MudTh>
+                                        <MudTh Class="mud-theme-primary">
+                                            <MudNumericField Class="align-right" Format="N0" Style="height:8px;width:100px;color:white" DisableUnderLine="true"
+                                             HideSpinButtons="true" @bind-Value="@BillAmountTotal"/>
+                                        </MudTh>
+                                        <MudTh Class="mud-theme-primary"></MudTh>
+                                        <MudTh Class="mud-theme-primary"></MudTh>
+                                    </FooterContent>
+                                </MudTable>
+                            </MudPaper>
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem OnClick="OnClickMenuItemEdit">編集</MudMenuItem>
+                                <MudMenuItem OnClick="OnClickMenuItemCopy">コピー</MudMenuItem>
+                                <MudMenuItem OnClick="OnClickMenuItemDelete">削除</MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>            
+
+                        }
+                        else
+                        {
+                            <span>
+                                There was an error uploading the file
+                                (Error: @result.ErrorCode).
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@code {
+    public int elevation = 0;
+    public int spacing { get; set; } = 0;
+    public string ClassSuccess = "";
+
+    [Inject] private IDialogService DialogService { get; set; }
+    private string SelectedFerryCompany { get; set; }
+    private EnumFerryCompany SelectedFerryId { get; set; } 
+
+    private FerryMasterElement[]? FerryMasterElementList;
+    public class FerryMasterElement{
+        public string? No{ get; set; }
+        public string? Name{ get; set; }
+    }
+ 
+    private List<File> files = new();
+    private List<UploadResult> uploadResults = new();
+    private int maxAllowedFiles = 3;
+    private bool shouldRender;
+    private int selectedRowNumber = -1;
+    private int BillAmountTotal;
+    private List<string> clickedEvents = new();
+    private MudTable<FerryCsvFormatElement> mudTable;
+    private HighwayCsvFormatElement[]? HighwayCsvList;
+    protected override bool ShouldRender() => shouldRender;
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(100);
+        FerryMasterElementList = await CommonDef.sharedClient.GetFromJsonAsync<FerryMasterElement[]>("jsons/FerryMaster.json");
+        BillAmountTotal = 0;
+        mudTable = new MudTable<FerryCsvFormatElement>();
+    }
+
+    public void OnChangedCompany(string value)
+    {
+        SelectedFerryCompany = value;
+
+        foreach (var item in FerryMasterElementList)
+        {
+            if (item.Name == value)
+            {
+                SelectedFerryId = (EnumFerryCompany)(int.Parse(item.No)-1);
+                break;
+            }
+        }
+    }
+    private void RowClickEvent(TableRowClickEventArgs<FerryCsvFormatElement> tableRowClickEventArgs)
+    {
+        clickedEvents.Add("Row has been clicked");
+        selectedRowNumber = (int)((FerryCsvFormatElement)(tableRowClickEventArgs.Item)).RowNo;
+    }
+    private string SelectedRowClassFunc(FerryCsvFormatElement element, int rowNumber)
+    {
+        return string.Empty;
+        @* if (selectedRowNumber == rowNumber)
+        {
+            selectedRowNumber = -1;
+            clickedEvents.Add("Selected Row: None");
+            return string.Empty;
+        }
+        else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(element))
+        {
+            selectedRowNumber = rowNumber;
+            clickedEvents.Add($"Selected Row: {rowNumber}");
+            return "selected";
+        }
+        else
+        {
+            return string.Empty;
+        } *@
+    }
+
+    public void OnClickMenuItemEdit(MouseEventArgs args)
+    {
+
+    }
+
+    public void OnClickMenuItemCopy(MouseEventArgs args)
+    {
+        
+    }
+    public void OnClickMenuItemDelete(MouseEventArgs args)
+    {
+        
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        shouldRender = false;
+        long maxFileSize = 1024 * 15;
+        var upload = false;
+
+        using var content = new MultipartFormDataContent();
+        files = new List<File>();
+        foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            if (uploadResults.SingleOrDefault(
+                f => f.FileName == file.Name) is null)
+            {
+                try
+                {
+                    files.Add(new() { Name = file.Name });
+
+                    var fileContent = 
+                        new StreamContent(file.OpenReadStream(maxFileSize));
+
+                    fileContent.Headers.ContentType = 
+                        new MediaTypeHeaderValue(file.ContentType);
+
+                    content.Add(
+                        content: fileContent,
+                        name: "\"files\"",
+                        fileName: file.Name);
+
+                    upload = true;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogInformation(
+                        "{FileName} not uploaded (Err: 6): {Message}", 
+                        file.Name, ex.Message);
+
+                    uploadResults.Add(
+                        new()
+                        {
+                            FileName = file.Name, 
+                            ErrorCode = 6, 
+                            Uploaded = false
+                        });
+                }
+            }
+        }
+
+        if (upload)
+        {
+            //var client = ClientFactory.CreateClient();
+
+            var response = 
+                await CommonDef.sharedClient.PostAsync("files", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                };
+
+                using var responseStream =
+                    await response.Content.ReadAsStreamAsync();
+
+                var newUploadResults = await JsonSerializer
+                    .DeserializeAsync<IList<UploadResult>>(responseStream, options);
+
+                if (newUploadResults is not null)
+                {
+                    uploadResults = uploadResults.Concat(newUploadResults).ToList();
+                }
+            }
+        }
+
+        shouldRender = true;
+    }
+
+    private static bool FileUpload(EnumFerryCompany id, IList<UploadResult> uploadResults,
+        string? fileName, ILogger<FerryUpload> logger, out UploadResult result, ref int BillAmountTotal)
+    {
+
+        @* result = uploadResults.SingleOrDefault(f => f.FileName == fileName) ?? new();
+
+        if (!result.Uploaded)
+        {
+            logger.LogInformation("{FileName} not uploaded (Err: 5)", fileName);
+            result.ErrorCode = 5;
+        } *@
+        result = new UploadResult();
+ 
+        result.Uploaded = true;
+        result.FileName = fileName;
+        FerryCsvReader reader = new FerryCsvReader();
+        result.UploadDataList = reader.ReadCsv(id, "C:\\temp\\" + fileName);
+        BillAmountTotal = 0;
+        foreach (var item in result.UploadDataList)
+        {
+            BillAmountTotal += (int)item.BillAmountTotal;
+        }
+        return result.Uploaded;;
+    }
+    private class File
+    {
+        public string? Name { get; set; }
+    }
+    public class UploadResult
+    {
+        public bool Uploaded { get; set; }
+        public string? FileName { get; set; }
+        public List<FerryCsvFormatElement>? UploadDataList { get; set; }
+        public int ErrorCode { get; set; }
+    }    
+}

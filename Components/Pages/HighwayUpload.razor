@@ -1,0 +1,238 @@
+@page "/highwayupload"
+@using System.Net.Http.Headers
+@using System.Text.Json
+@using CSVReaders
+@using Common
+@using Data
+@inject IHttpClientFactory ClientFactory
+@inject ILogger<HighwayUpload> Logger
+@inject IWebHostEnvironment Environment
+@inject HttpClient Http
+
+<PageTitle>高速会社請求データ取り込み</PageTitle>
+
+<h1>高速会社請求データ取り込み</h1>
+
+<p>
+    高速会社から入手した請求CSVデータを選択し、取り込みます。
+</p>
+
+<p>
+    <label>
+        <InputFile OnChange="OnInputFileChange" multiple />
+    </label>
+</p>
+
+@if (files.Count > 0)
+{
+    <MudPaper Height="10px" Width="1600px" Elevation="0"></MudPaper>
+    <MudButton Style="Width:110px;height:30px" Variant="Variant.Outlined" Color="Color.Primary">登録</MudButton>
+
+    <div class="card">
+        <div class="card-body">
+            <ul>
+                @foreach (var file in files)
+                {
+                    <li>
+                        <br>
+                        @if (FileUpload(uploadResults, file.Name, Logger,
+                           out var result))
+                        {
+                            <MudPaper Class="" Height="600px" Width="1600px" Elevation="0">
+                                <MudTable Items="@result.UploadDataList" HorizontalScrollbar="true" Dense="true" Hover="true" ReadOnly="true" SortLabel="Sort By">
+                                    <HeaderContent>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.CarNo)">車両No.</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.ETCNo)">ETC Card No.</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.StartDate)">開始日</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.StartTime)">時間</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.EndDate)">終了日</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.EndTime)">時間</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.StartICName)">開始IC名</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.EndICName)">終了IC名</MudTableSortLabel></MudTh>
+                                        <MudTh Class="mud-theme-primary"><MudTableSortLabel SortBy="new Func<HighwayCsvFormatElement, object>(x=>x.Payment)">支払金額</MudTableSortLabel></MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate>
+                                        <MudTd DataLabel="車両No.">
+                                            <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.CarNo"  />
+                                        </MudTd>
+                                        <MudTd DataLabel="ETC Card No.">
+                                            <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.ETCNo"  />
+                                        </MudTd>
+                                        <MudTd DataLabel="開始日">
+                                            <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.StartDate"  />
+                                        </MudTd>                        
+                                        <MudTd DataLabel="時間">
+                                            <MudTextField Style="width:60px;" DisableUnderLine="true" @bind-Value="@context.StartTime"/>
+                                        </MudTd>
+                                        <MudTd DataLabel="終了日">
+                                            <MudTextField Style="width:100px;" DisableUnderLine="true" @bind-Value="@context.EndDate"/>
+                                        </MudTd>                        
+                                        <MudTd DataLabel="時間">
+                                            <MudTextField Style="width:60px;" DisableUnderLine="true" @bind-Value="@context.EndTime"/>
+                                        </MudTd>
+                                        <MudTd DataLabel="開始IC名">
+                                            <MudTextField Style="width:150px;" DisableUnderLine="true" @bind-Value="@context.StartICName"/>
+                                        </MudTd>
+                                        <MudTd DataLabel="終了IC名">
+                                            <MudTextField Style="width:150px;" DisableUnderLine="true" @bind-Value="@context.EndICName"/>
+                                        </MudTd>
+                                        <MudTd DataLabel="支払金額">
+                                            <MudNumericField Format="N0" HideSpinButtons="true"
+                                                ReadOnly="true" DisableUnderLine="true" Style="width:100px;" @bind-Value="@context.Payment"/>
+                                        </MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudPaper>    
+                        }
+                        else
+                        {
+                            <span>
+                                There was an error uploading the file
+                                (Error: @result.ErrorCode).
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@code {
+    private List<File> files = new();
+    private List<UploadResult> uploadResults = new();
+    private int maxAllowedFiles = 3;
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+    private HighwayCsvFormatElement[]? HighwayCsvList;
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+         shouldRender = false;
+        long maxFileSize = 1024 * 15;
+        var upload = false;
+
+        using var content = new MultipartFormDataContent();
+
+        foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            if (uploadResults.SingleOrDefault(
+                f => f.FileName == file.Name) is null)
+            {
+                try
+                {
+                    files.Add(new() { Name = file.Name });
+
+                    var fileContent = 
+                        new StreamContent(file.OpenReadStream(maxFileSize));
+
+                    fileContent.Headers.ContentType = 
+                        new MediaTypeHeaderValue(file.ContentType);
+
+                    content.Add(
+                        content: fileContent,
+                        name:  "\"files\"",
+                        fileName: file.Name);
+
+                    upload = true;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogInformation(
+                        "{FileName} not uploaded (Err: 6): {Message}", 
+                        file.Name, ex.Message);
+
+                    uploadResults.Add(
+                        new()
+                        {
+                            FileName = file.Name, 
+                            ErrorCode = 6, 
+                            Uploaded = false
+                        });
+                }
+            }
+        }
+
+        if (upload)
+        {
+            @* var client = ClientFactory.CreateClient(); *@
+            try
+            {
+                @* var response = 
+                    await client.PostAsync("http://localhost:5214/highwayupload", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                    };
+
+                    using var responseStream =
+                        await response.Content.ReadAsStreamAsync();
+
+                    var newUploadResults = await JsonSerializer
+                        .DeserializeAsync<IList<UploadResult>>(responseStream, options);
+
+                    if (newUploadResults is not null)
+                    {
+                        uploadResults = uploadResults.Concat(newUploadResults).ToList();
+                    }
+                } *@
+                var response = await Http.PostAsync("http://localhost:5214/Filesave", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    using var responseStream =
+                        await response.Content.ReadAsStreamAsync();
+    //                    .ReadFromJsonAsync<IList<UploadResult>>();
+
+                    if (responseStream is not null)
+                    {
+    //                    uploadResults = uploadResults.Concat(newUploadResults).ToList();
+                    }
+                }                
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInformation(
+                    "(Err: 7): {Message}", 
+                    ex.Message);
+            }                
+        }
+
+        shouldRender = true;
+    }
+
+    private static bool FileUpload(IList<UploadResult> uploadResults,
+        string? fileName, ILogger<HighwayUpload> logger, out UploadResult result)
+    {
+
+        result = uploadResults.SingleOrDefault(f => f.FileName == fileName) ?? new();
+
+        if (!result.Uploaded)
+        {
+            logger.LogInformation("{FileName} not uploaded (Err: 5)", fileName);
+            result.ErrorCode = 5;
+        }
+        result = new UploadResult();
+ 
+        result.Uploaded = true;
+        result.FileName = fileName;
+        HighwayCsvReader reader = new HighwayCsvReader();
+        result.UploadDataList = reader.ReadCsv("C:\\temp\\" + fileName);
+        return result.Uploaded;;
+    }
+
+    private class File
+    {
+        public string? Name { get; set; }
+    }
+
+    public class UploadResult
+    {
+        public bool Uploaded { get; set; }
+        public string? FileName { get; set; }
+        public List<HighwayCsvFormatElement>? UploadDataList { get; set; }
+        public int ErrorCode { get; set; }
+    }
+}

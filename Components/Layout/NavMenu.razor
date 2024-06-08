@@ -1,69 +1,46 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">メニュー</a>
-    </div>
-</div>
+﻿@rendermode InteractiveServer
+<link href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" rel="stylesheet">
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> 共通
-            </NavLink>
-            <ul>
-                <li><NavLink class="nav-link" href="login"> 
-                    <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> ログイン画面
-                </NavLink></li>
-            </ul>
-        </div>
-
-        @if (isLogin)
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> 運転日報関連
-                </NavLink>
-                <ul>
-                    <li><NavLink class="nav-link" href="nippoulist"> 
-                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> 運転日報入力確認
-                    </NavLink></li>
-                </ul>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> フェリー会社請求関連
-                </NavLink>
-                <ul>
-                    <li><NavLink class="nav-link" href="ferryimport"> 
-                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> csv取り込み
-                    </NavLink></li>
-                    <li><NavLink class="nav-link" href="ferry"> 
-                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> 請求入力
-                    </NavLink></li>
-                </ul>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> 高速会社請求関連
-                </NavLink>
-                <ul>
-                    <li><NavLink class="nav-link" href="highwayimport"> 
-                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> csv取り込み
-                    </NavLink></li>
-                    <li><NavLink class="nav-link" href="highway"> 
-                        <span class="bi bi-align-start-nav-menu" aria-hidden="true"></span> 請求入力
-                    </NavLink></li>
-                </ul>
-            </div>
-        }
-    </nav>
-</div>
+<MudPaper Width="250px" Class="d-inline-flex py-3" Elevation="0">
+    <MudNavMenu Class="mud-width-full">
+        <MudText Typo="Typo.h6" Class="px-4">メニュー</MudText>
+        <MudDivider Class="my-2" />
+        <MudNavLink Href="/login" IconColor="Color.Info" Icon="@Icons.Material.Filled.Home">ホーム</MudNavLink>
+        <MudNavGroup Title="運転日報関係" IconColor="Color.Info" Icon="@Icons.Material.Filled.FireTruck" Expanded="@expand[1]" ExpandedChanged="@(e => this.ExpandedChanged(e, 1))">
+            <MudNavLink Href="/driveinput" IconColor="Color.Info" Icon="@Icons.Material.Filled.Keyboard">日報入力</MudNavLink>
+            <MudNavLink Href="/driveinfolist" IconColor="Color.Info" Icon="@Icons.Material.Filled.ListAlt">日報確認</MudNavLink>
+            <MudNavLink Href="/driveinfodownload" IconColor="Color.Info" Icon="@Icons.Material.Filled.Download">ダウンロード</MudNavLink>
+        </MudNavGroup>
+        <MudNavGroup Title="請求関係" IconColor="Color.Info" Icon="@Icons.Material.Filled.EditNote" Expanded="@expand[2]" ExpandedChanged="@(e => this.ExpandedChanged(e, 2))">
+            <MudNavGroup Title="フェリー会社関係" IconColor="Color.Info" Icon="@Icons.Material.Filled.Anchor" Expanded="@expand[3]" ExpandedChanged="@(e => this.ExpandedChanged(e, 3))">
+                <MudNavLink Href="/ferryUpload" Icon="@Icons.Material.Filled.UploadFile" IconColor="Color.Info">csv取り込み</MudNavLink>
+                <MudNavLink Href="/ferryCheck" Icon="@Icons.Material.Filled.ConfirmationNumber" IconColor="Color.Info">請求照会</MudNavLink>
+                <MudNavLink Href="/ferryBilling" Icon="@Icons.Material.Filled.Print" IconColor="Color.Info">傭車別請求確認</MudNavLink>
+            </MudNavGroup>
+            <MudNavGroup Title="高速会社関係" IconColor="Color.Info" Icon="@Icons.Material.Filled.CarRepair" Expanded="@expand[4]" ExpandedChanged="@(e => this.ExpandedChanged(e, 4))">
+                <MudNavLink Href="/highwayUpload" Icon="@Icons.Material.Filled.UploadFile" IconColor="Color.Info">csv取り込み</MudNavLink>
+                <MudNavLink Href="/highwayCheck" Icon="@Icons.Material.Filled.ConfirmationNumber" IconColor="Color.Info">請求確認</MudNavLink>
+            </MudNavGroup>
+        </MudNavGroup>
+        <MudNavGroup Title="設定" IconColor="Color.Info" Icon="@Icons.Material.Filled.Settings" Expanded="@expand[5]" ExpandedChanged="@(e => this.ExpandedChanged(e, 5))">
+            <MudNavLink Href="/masterInput" Icon="@Icons.Material.Filled.Update" IconColor="Color.Info">各種マスター登録</MudNavLink>
+            <MudNavLink Href="/security" Icon="@Icons.Material.Filled.Security" IconColor="Color.Info">セキュリティ</MudNavLink>
+        </MudNavGroup>
+    </MudNavMenu>
+</MudPaper>
 
 @code{
-    public bool isLogin = true;
+    public bool[] expand = new bool[6];
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate streaming rendering
+        await Task.Delay(100);
+    }
+
+    private void ExpandedChanged(bool val, int idx)
+    {
+        expand[idx] = val;
+    }
 
 }

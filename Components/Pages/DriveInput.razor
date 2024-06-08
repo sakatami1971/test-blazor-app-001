@@ -1,0 +1,735 @@
+@page "/driveinput"
+@using System.Net.Http.Json
+@using Common
+@using Data
+@inject HttpClient httpClient
+@rendermode InteractiveServer
+@inject ISnackbar Snackbar
+
+<style>
+.align-right input{
+    text-align: right;
+}</style>
+<style>
+.label-1{
+    font-size: large;
+}</style>
+
+<MudPopoverProvider />
+<MudDialogProvider/>
+<MudSnackbarProvider />
+<MudGrid Spacing="@spacing" Justify="Justify.Center">
+    <MudItem>
+        <MudPaper Class="@ClassSuccess" Height="220px" Width="1000px" Elevation="@elevation">
+            <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:center;">
+                <MudTextField T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:150px" Label="運行日(yyyymmdd)"/>
+                <MudTextField T="string" Style="Width:20px" @bind-Value="LabelFromTo" Label="" Margin="Margin.Dense"
+                 Disabled="true" DisableUnderLine="true"/>
+                <MudTextField T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="Width:150px" Label="運行日(yyyymmdd)"/>
+                <MudPaper Height="50px" Width="180px" Elevation="@elevation"/>
+                <MudCheckBox @bind-Value="@CheckBoxConfirm" Dense="true" Label="確認済" Color="Color.Primary"
+                 Style="Width:200px"></MudCheckBox>
+                <MudPaper Height="50px" Width="220px" Elevation="@elevation"/>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:center;">
+                <MudSelect T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"
+                 Label="車両No." Style="Width:100px" ValueChanged="OnChangedCarNo">
+                    @if (CarElementList != null)
+                    {
+                        @foreach (var item in CarElementList)
+                        {
+                            <MudSelectItem T="string" Value="@item.No"></MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+                <label style="width:360px;height:30px;margin-top:10px;">@CarName</label> 
+                <MudNumericField Class="align-right" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true"
+                 HideSpinButtons="true" @bind-Value="CarLength" Style="Width:100px" Label="長さ(m)"/>
+                <MudPaper Height="50px" Width="200px" Elevation="@elevation"/>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:center;">
+                <MudSelect T="string"  Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"
+                 Label="乗務員No." Style="Width:100px" @bind-Values="DriverNo" ValueChanged="OnChangedDriverNo">
+                    @if (DriverElementList != null)
+                    {
+                        @foreach (var item in DriverElementList)
+                        {
+                            <MudSelectItem T="string" Value="@item.No"></MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+                <label style="width:360px;height:30px;margin-top:10px;">@DriverName</label> 
+                <MudNumericField Class="align-right" Variant="Variant.Outlined" Margin="Margin.Dense" Label="歩合(%)"
+                 Min="0" Max="100" HideSpinButtons="false" @bind-Value="Commission" Style="Width:100px"/>
+                <MudPaper Height="50px" Width="200px" Elevation="@elevation"/>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:center;">
+                <MudNumericField Class="align-right" Format="N0" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="false"
+                 @bind-Value="MileageFrom" Style="Width:150px" Label="走行距離[km]"/>
+                <MudTextField T="string" Style="Width:20px" @bind-Value="LabelFromTo" Margin="Margin.Dense" Label="" Disabled="true"
+                 DisableUnderLine="true"/>
+                <MudNumericField Class="align-right" Format="N0" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="false"
+                 @bind-Value="MileageTo" Style="Width:150px" Label="走行距離[km]"/>
+                <MudPaper Height="50px" Width="190px" Elevation="@elevation"/>
+                <MudSelect T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense" Label="例外勤務"
+                 Style="Width:100px" ValueChanged="OnChangedExceptionalWork">
+                    @foreach (var item in ExceptionList)
+                    {
+                        <MudSelectItem T="string" Value="@item"></MudSelectItem>
+                    }
+                </MudSelect>
+                <MudPaper Height="50px" Width="295px" Elevation="@elevation"/>
+            </div>
+        </MudPaper>
+        <MudPaper Class="@ClassInfo" Height="300px" Width="1000px" Elevation="@elevation">
+            <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:center;">
+                <MudPaper Height="30px" Width="1000px" Elevation="@elevation"></MudPaper>
+            </div>    
+            <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;align-items:center;">
+                <div style="height:260px;width:400px;">
+                    <MudTable Items="@SalesAmountList" Dense="true" Hover="true" ReadOnly="false" CanCancelEdit="true" Bordered="true"
+                            Height="30vh"
+                            @bind-SelectedItem="selectedAmountItem" SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+                            OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+                            RowEditPreview="BackupAmountItem"
+                            RowEditCancel="ResetAmountItemToOriginalValues"
+                            RowEditCommit="AmountItemHasBeenCommitted"
+                            ApplyButtonPosition="TableApplyButtonPosition.End"
+                            EditButtonPosition="TableEditButtonPosition.End"
+                            EditTrigger="TableEditTrigger.RowClick">
+                        <HeaderContent >
+                            <MudTh Class="mud-theme-primary" Style="width:100px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<AmountElement, object>(x=>x.Name)">
+                                    <label Class="label-1">売上項目</label>
+                                </MudTableSortLabel>
+                            </MudTh>
+                            <MudTh Class="mud-theme-primary" Style="width:140px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<AmountElement, object>(x=>x.Amount)">
+                                    <label Class="label-1">金額</label>
+                                </MudTableSortLabel>
+                            </MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="売上項目">
+                                <MudTextField @bind-Value="@context.Name" DisableUnderLine="true" Style="width:100px; height:14px"/>
+                            </MudTd>
+                            <MudTd DataLabel="金額">
+                                <MudNumericField ReadOnly="true" HideSpinButtons="true" DisableUnderLine="true" Class="align-right"
+                                 Style="width:140px;height:14px;" Format="N0" @bind-Value="@context.Amount"/>
+                            </MudTd>
+                        </RowTemplate>
+                        <RowEditingTemplate>
+                            <MudTd DataLabel="売上項目">
+                                <MudTextField @bind-Value="@context.Name" Disabled="true" DisableUnderLine="true" Style="width:100px; height:14px"/>
+                            </MudTd>
+                            <MudTd DataLabel="金額">
+                                <MudNumericField Class="align-right" Format="N0" Style="width:140px;height:14px" @bind-Value="@context.Amount"/>
+                            </MudTd>    
+                        </RowEditingTemplate>
+                    </MudTable>
+                </div>
+                <MudPaper Height="260px" Width="100px" Elevation="0"></MudPaper>
+                <div style="height:260px;width:400px;">
+                    <MudTable Items="@AllowanceList" Dense="true" Hover="true" ReadOnly="false" CanCancelEdit="true" Bordered="true"
+                            Height="30vh"
+                            @bind-SelectedItem="selectedAllowanceItem" SortLabel="Sort By" CommitEditTooltip="Commit Edit" 
+                            OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+                            RowEditPreview="BackupAllowanceItem"
+                            RowEditCancel="ResetAllowanceItemToOriginalValues"
+                            RowEditCommit="AllowanceItemHasBeenCommitted"
+                            ApplyButtonPosition="TableApplyButtonPosition.End"
+                            EditButtonPosition="TableEditButtonPosition.End"
+                            EditTrigger="TableEditTrigger.RowClick">
+                        <HeaderContent>
+                            <MudTh Class="mud-theme-primary" Style="width:100px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<AmountElement, object>(x=>x.Name)">
+                                    <label Class="label-1">支払項目</label>
+                                </MudTableSortLabel>
+                            </MudTh>
+                            <MudTh Class="mud-theme-primary" Style="width:100px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<AmountElement, object>(x=>x.Amount)">
+                                    <label Class="label-1">金額</label>
+                                </MudTableSortLabel>
+                            </MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="支払項目">
+                                <MudTextField @bind-Value="@context.Name" DisableUnderLine="true" Style="width:100px; height:14px"/>
+                            </MudTd>
+                            <MudTd DataLabel="金額">
+                                <MudNumericField ReadOnly="true" HideSpinButtons="true" DisableUnderLine="true" Class="align-right"
+                                 Format="N0" Style="width:140px; height:14px" @bind-Value="@context.Amount"/>
+                            </MudTd>
+                        </RowTemplate>
+                        <RowEditingTemplate>
+                            <MudTd DataLabel="支払項目">
+                                <MudTextField @bind-Value="@context.Name" Disabled="true" DisableUnderLine="true" Style="width:100px; height:14px"/>
+                            </MudTd>
+                            <MudTd DataLabel="金額">
+                                <MudNumericField Class="align-right" Format="N0" Style="width:140px; height:14px" @bind-Value="@context.Amount"/>
+                            </MudTd>    
+                        </RowEditingTemplate>
+                    </MudTable>
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem>
+    </MudItem>
+    <MudItem>
+        <MudPaper Class="mud-theme-primary" Height="520px" Width="400px">
+            <MudPaper Class="mud-theme-primary" Height="20px" Width="400px" Elevation="0"></MudPaper>
+            <center>
+                <MudPaper Class="mud-theme-primary" Height="400px" Width="300px">
+                    <MudTable Items="@TotalAmountList" Bordered="true" Dense="false" Hover="false" ReadOnly="true">
+                        <HeaderContent>
+                            <MudTh Class="mud-theme-warning">
+                                <label Class="label-1">項目</label>
+                            </MudTh>
+                            <MudTh Class="mud-theme-warning">
+                                <label Class="label-1">金額</label>
+                            </MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="項目">
+                                <MudTextField @bind-Value="@context.Name" ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:12px"/>
+                            </MudTd>
+                            <MudTd DataLabel="金額">
+                                <MudNumericField Class="align-right" Format="N0" ReadOnly="true" @bind-Value="@context.Amount" DisableUnderLine="true"
+                                 HideSpinButtons="true" Style="width:100px;height:12px"/>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+                <MudPaper Class="mud-theme-primary" Height="20px" Width="400px" Elevation="0"></MudPaper>
+                <MudIconButton Icon="@Icons.Material.Filled.Update" Color="Color.Secondary" Variant="Variant.Filled" Style="Width:300px;height:50px"></MudIconButton>
+            </center>
+        </MudPaper>
+    </MudItem>
+    <MudItem>
+        <MudPaper Height="30px" Width="1400px" Elevation="0"></MudPaper>
+        <div style="width:1400px;height:300px;">
+            <MudExpansionPanels MultiExpansion="true">
+                <MudExpansionPanel Text="経費項目" Style="Width:1400px; background-color:lightgreen">
+                        <MudTable Items="@FerryList" Bordered="true" Dense="true" Hover="true" ReadOnly="false" CanCancelEdit="true"
+                                Height="18vh"
+                                @bind-SelectedItem="selectedFerryItem" SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+                                OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+                                RowEditPreview="BackupFerryItem"
+                                RowEditCancel="ResetFerryItemToOriginalValues"
+                                RowEditCommit="FerryItemHasBeenCommitted"
+                                ApplyButtonPosition="TableApplyButtonPosition.End"
+                                EditButtonPosition="TableEditButtonPosition.End"
+                                EditTrigger="TableEditTrigger.RowClick">
+                            <HeaderContent>
+                                <MudTh Class="mud-theme-primary" Style="width:150px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.Name)">会社名</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:100px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.DateOfBoarding)">年月日</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:60px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.ActualVehicle)">実車</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:200px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.RouteName)">航路名</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:50px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.Flight)">便</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:80px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.TimeOfBoarding)">時間</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:150px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.Amount)">金額</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:150px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.ElectricBill)">電気代</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:150px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<FerryElement, object>(x=>x.PassengerFee)">旅客代</MudTableSortLabel></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="会社名">
+                                    <MudTextField DisableUnderLine="true" Style="width:150px;height:14px" @bind-Value="@context.Name" Disabled="true"/>
+                                </MudTd>
+                                <MudTd DataLabel="年月日">
+                                    <MudTextField DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.DateOfBoarding"/>
+                                </MudTd>
+                                <MudTd DataLabel="実車">
+                                    <MudTextField DisableUnderLine="true" Style="width:60px;height:14px" @bind-Value="@context.ActualVehicle"/>
+                                </MudTd>
+                                <MudTd DataLabel="航路名">
+                                    <MudTextField DisableUnderLine="true" Style="width:200px;height:14px" @bind-Value="@context.RouteName"/>
+                                </MudTd>
+                                <MudTd DataLabel="便">
+                                    <MudNumericField DisableUnderLine="true" Style="width:50px;height:14px" @bind-Value="@context.Flight"/>
+                                </MudTd>
+                                <MudTd DataLabel="時間">
+                                    <MudTextField DisableUnderLine="true" Style="width:80px;height:14px" @bind-Value="@context.TimeOfBoarding"/>
+                                </MudTd>
+                                <MudTd DataLabel="金額">
+                                    <MudNumericField HideSpinButtons="true" DisableUnderLine="true" Class="align-right" Format="N0"
+                                     Style="width:150px;height:14px" @bind-Value="@context.Amount"/>
+                                </MudTd>    
+                                <MudTd DataLabel="電気代">
+                                    <MudNumericField HideSpinButtons="true" DisableUnderLine="true" Class="align-right" Format="N0"
+                                     Style="width:150px;height:14px" @bind-Value="@context.ElectricBill"/>
+                                </MudTd>    
+                                <MudTd DataLabel="旅客代">
+                                    <MudNumericField HideSpinButtons="true" DisableUnderLine="true" Class="align-right" Format="N0"
+                                     Style="width:150px;height:14px" @bind-Value="@context.PassengerFee"/>
+                                </MudTd>
+                            </RowTemplate>
+                            <RowEditingTemplate>
+                                <MudTd DataLabel="会社名">
+                                    <MudTextField Style="width:150px;height:14px" @bind-Value="@context.Name" Disabled="true" DisableUnderLine="true"/>
+                                </MudTd>
+                                <MudTd DataLabel="年月日">
+                                    <MudTextField Style="width:100px;height:14px" @bind-Value="@context.DateOfBoarding" Required />
+                                </MudTd>
+                                <MudTd DataLabel="実車">
+                                    <MudTextField Style="width:60px;height:14px" @bind-Value="@context.ActualVehicle" Required />
+                                </MudTd>
+                                <MudTd DataLabel="航路名">
+                                    <MudTextField Style="width:200px;height:14px" @bind-Value="@context.RouteName" Required />
+                                </MudTd>
+                                <MudTd DataLabel="便">
+                                    <MudNumericField Style="width:50px;height:14px" @bind-Value="@context.Flight" Required />
+                                </MudTd>
+                                <MudTd DataLabel="時間">
+                                    <MudTextField Style="width:80px;height:14px" @bind-Value="@context.TimeOfBoarding" Required />
+                                </MudTd>
+                                <MudTd DataLabel="金額">
+                                    <MudNumericField Class="align-right" Format="N0" Style="width:150px;height:14px" @bind-Value="@context.Amount"/>
+                                </MudTd>    
+                                <MudTd DataLabel="電気代">
+                                    <MudNumericField Class="align-right" Format="N0" Style="width:150px;height:14px" @bind-Value="@context.ElectricBill"/>
+                                </MudTd>    
+                                <MudTd DataLabel="旅客代">
+                                    <MudNumericField Class="align-right" Format="N0" Style="width:150px;height:14px" @bind-Value="@context.PassengerFee"/>
+                                </MudTd>
+                            </RowEditingTemplate>
+                        </MudTable>
+                </MudExpansionPanel>
+                <MudExpansionPanel Text="立替項目" Style="Width:1400px; background-color:#white">
+                    <div id="unique_id_scroll_section" class="ma-0" style="height:400px;">
+                        <MudTable Items="@AdvancePaymentList" Bordered="true" Dense="true" Hover="true" ReadOnly="false" FixedHeader="true" CanCancelEdit="true"
+                                Height="30vh"
+                                @bind-SelectedItem="selectedAdvancePaymentItem" SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+                                OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+                                RowEditPreview="BackupAdvancePaymentItem"
+                                RowEditCancel="ResetAdvancePaymentItemToOriginalValues"
+                                RowEditCommit="AdvancePaymentItemHasBeenCommitted"
+                                ApplyButtonPosition="TableApplyButtonPosition.End"
+                                EditButtonPosition="TableEditButtonPosition.End"
+                                EditTrigger="TableEditTrigger.RowClick">
+                            <HeaderContent>
+                                <MudTh Class="mud-theme-primary" Style="width:50px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<AdvancePaymentElement, object>(x=>x.No)">No.</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:100px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<AdvancePaymentElement, object>(x=>x.DateOfAdvance)">年月日</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:250px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<AdvancePaymentElement, object>(x=>x.Name)">立替名称</MudTableSortLabel></MudTh>
+                                <MudTh Class="mud-theme-primary" Style="width:150px; height:14px">
+                                    <MudTableSortLabel SortBy="new Func<AdvancePaymentElement, object>(x=>x.Amount)">金額</MudTableSortLabel></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="No.">
+                                    <MudNumericField Class="align-right" Style="width:50px; height:14px" Format="N0" ReadOnly="true" HideSpinButtons="true"
+                                     DisableUnderLine="true" @bind-Value="@context.No"/>
+                                </MudTd>
+                                <MudTd DataLabel="年月日">
+                                    <MudTextField Style="width:100px; height:14px" DisableUnderLine="true" @bind-Value="@context.DateOfAdvance"/>
+                                </MudTd>                                    
+                                <MudTd DataLabel="立替名称">@context.Name
+                                    <MudTextField Style="width:250px; height:14px" DisableUnderLine="true"  @bind-Value="@context.Name"/>
+                                </MudTd>
+                                <MudTd DataLabel="金額">
+                                    <MudNumericField Class="align-right" Format="N0" ReadOnly="true" Style="width:150px; height:14px" HideSpinButtons="true"
+                                     DisableUnderLine="true" @bind-Value="@context.Amount"/>
+                                </MudTd>
+                            </RowTemplate>
+                            <RowEditingTemplate>
+                                <MudTd DataLabel="No">
+                                    <MudTextField Class="align-right" Style="width:50px; height:14px" ReadOnly="true" HideSpinButtons="true" DisableUnderLine="true"
+                                     @bind-Value="@context.No"/>
+                                </MudTd>
+                                <MudTd DataLabel="年月日">
+                                    <MudTextField Style="width:100px; height:14px" @bind-Value="@context.DateOfAdvance" Required />
+                                </MudTd>
+                                <MudTd DataLabel="立替名称">
+                                    <MudTextField Style="width:250px; height:14px" @bind-Value="@context.Name" Required />
+                                </MudTd>
+                                <MudTd DataLabel="金額">
+                                    <MudNumericField Class="align-right" Format="N0" Style="width:150px; height:14px" @bind-Value="@context.Amount"/>
+                                </MudTd>
+                            </RowEditingTemplate>
+                        </MudTable>
+                    </div>
+                </MudExpansionPanel>
+                <MudExpansionPanel Text="控除項目" Style="Width:1400px; background-color:lightgreen">
+                    <MudTable Items="@HighwayPaymentList" Bordered="true" Dense="true" Hover="true" ReadOnly="false" FixedHeader="true" CanCancelEdit="true"
+                            Height="70vh"
+                            @bind-SelectedItem="selectedHighwayPaymentItem" SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+                            OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+                            RowEditPreview="BackupHighwayPaymentItem"
+                            RowEditCancel="ResetHighwayPaymentItemToOriginalValues"
+                            RowEditCommit="HighwayPaymentItemHasBeenCommitted"
+                            ApplyButtonPosition="TableApplyButtonPosition.End"
+                            EditButtonPosition="TableEditButtonPosition.End"
+                            EditTrigger="TableEditTrigger.RowClick">
+                        <HeaderContent>
+                            <MudTh Class="mud-theme-primary" Style="width:50px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<HighwayPaymentElement, object>(x=>x.No)">No.</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary" Style="width:150px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<HighwayPaymentElement, object>(x=>x.DateOfHighway)">年月日</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary" Style="width:200px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<HighwayPaymentElement, object>(x=>x.StartSection)">開始区間</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary" Style="width:200px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<HighwayPaymentElement, object>(x=>x.EndSection)">終了区間</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary" Style="width:200px; height:14px">
+                                <MudTableSortLabel SortBy="new Func<HighwayPaymentElement, object>(x=>x.Amount)">金額</MudTableSortLabel></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="No.">
+                                <MudTextField Class="align-right" Style="width:50px; height:14px" ReadOnly="true" DisableUnderLine="true" @bind-Value="@context.No"/>
+                            </MudTd>
+                            <MudTd DataLabel="年月日">
+                                <MudTextField Style="width:150px; height:14px" ReadOnly="true" DisableUnderLine="true" @bind-Value="@context.DateOfHighway"/>
+                            </MudTd>
+                            <MudTd DataLabel="開始区間">
+                                <MudTextField Style="width:200px; height:14px" ReadOnly="true" DisableUnderLine="true" @bind-Value="@context.StartSection"/>
+                            </MudTd>
+                            <MudTd DataLabel="終了区間">
+                                <MudTextField Style="width:200px; height:14px" ReadOnly="true" DisableUnderLine="true" @bind-Value="@context.EndSection"/>
+                            </MudTd>
+                            <MudTd DataLabel="金額">
+                                <MudNumericField Class="align-right" Format="N0" ReadOnly="true" HideSpinButtons="true" DisableUnderLine="true"
+                                 Style="width:200px; height:14px" @bind-Value="@context.Amount"/>
+                            </MudTd>
+                        </RowTemplate>
+                        <RowEditingTemplate>
+                            <MudTd DataLabel="No">
+                                <MudTextField Class="align-right" ReadOnly="true" HideSpinButtons="true" DisableUnderLine="true"
+                                 Style="width:50px; height:14px" @bind-Value="@context.No" Required />
+                            </MudTd>
+                            <MudTd DataLabel="年月日">
+                                <MudTextField Style="width:150px; height:14px" @bind-Value="@context.DateOfHighway" Required />
+                            </MudTd>
+                            <MudTd DataLabel="開始区間">
+                                <MudTextField Style="width:200px; height:14px" @bind-Value="@context.StartSection" Required />
+                            </MudTd>
+                            <MudTd DataLabel="終了区間">
+                                <MudTextField Style="width:200px; height:14px" @bind-Value="@context.EndSection" Required />
+                            </MudTd>
+                            <MudTd DataLabel="金額">
+                                <MudNumericField Class="align-right" Style="width:200px; height:14px" Format="N0" @bind-Value="@context.Amount"/>
+                            </MudTd>
+                        </RowEditingTemplate>
+                    </MudTable>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </div>
+    </MudItem>    
+</MudGrid>
+
+@code {
+    private FerryElement? selectedFerryItem = null;
+    private FerryElement? elementFerryBeforeEdit = null;
+    private IEnumerable<FerryElement> FerryList = new List<FerryElement>();
+    private FerryElement[]? FerryElementList;
+
+    private AdvancePaymentElement[]? AdvancePaymentElementList;
+    private IEnumerable<AdvancePaymentElement> AdvancePaymentList = new List<AdvancePaymentElement>();
+    private AdvancePaymentElement? selectedAdvancePaymentItem = null;
+    private AdvancePaymentElement? elementAdvancePaymentBeforeEdit = null;
+
+    private HighwayPaymentElement[]? HighwayPaymentElementList;
+    private IEnumerable<HighwayPaymentElement> HighwayPaymentList = new List<HighwayPaymentElement>();
+    private HighwayPaymentElement? selectedHighwayPaymentItem = null;
+    private HighwayPaymentElement? elementHighwayPaymentBeforeEdit = null;
+
+    private IEnumerable<AmountElement> SalesAmountList = new List<AmountElement>();
+    private AmountElement[]? AmountElementList;
+    private AmountElement? selectedAmountItem = null;
+    private AmountElement? elementAmountBeforeEdit = null;
+
+    private IEnumerable<AmountElement> AllowanceList = new List<AmountElement>();
+    private AmountElement[]? AllowanceElementList;
+    private AmountElement? selectedAllowanceItem = null;
+    private AmountElement? elementAllowanceBeforeEdit = null;
+
+    private IEnumerable<TotalAmountElement> TotalAmountList = new List<TotalAmountElement>();
+    private TotalAmountElement[]? TotalAmountElementList;
+
+    private CarMasterElement[]? CarElementList;
+    private DriverMasterElement[]? DriverElementList;
+
+    public bool _pen = false;
+    private bool _readOnly = false;
+    private List<string> _events = new();
+    public string[] ExceptionList =
+    {
+       "", "待機", "その他"
+    };
+
+    private bool _classSuccess = false;
+    private bool _classInfo = false;
+    public string ClassSuccess = "";
+    public string ClassInfo = "";
+    public string LabelFromTo = "～";
+    public int elevation = 0;
+    public int spacing { get; set; } = 0;
+    public string CarNo { get; set; } = "";
+    public string CarName { get; set;  } = "";
+    public int CarLength { get; set; } = 0;    
+    private string DriverNo { get; set; } = "";
+    public string DriverName { get; set;  } = "";
+    public int MileageFrom { get; set; } = 0;
+    public int MileageTo { get; set; } = 0;
+    public bool CheckBoxConfirm { get; set; } = false;
+    public int Commission { get; set; } = 0;
+    public int SalesTotal
+    {
+         get
+         {
+            int total = 0;
+            if (SalesAmountList != null)
+            {
+                foreach (var item in SalesAmountList)
+                {
+                    total += (int)item.Amount;
+                }
+            }
+            return total;
+         }
+         set{}
+    }
+    public int FerryFee { get; set; } = 0;
+    public int SubtractionTotal { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(100);
+        AmountElementList = await CommonDef.sharedClient.GetFromJsonAsync<AmountElement[]>("jsons/SalesAmountList.json");
+        if (AmountElementList != null)
+            SalesAmountList = AmountElementList;
+
+
+        AllowanceElementList = await CommonDef.sharedClient.GetFromJsonAsync<AmountElement[]>("jsons/Allowance.json");
+        if (AllowanceElementList != null)
+            AllowanceList = AllowanceElementList;
+
+        FerryElementList = await CommonDef.sharedClient.GetFromJsonAsync<FerryElement[]>("jsons/FerryAllowance.json");
+        if (FerryElementList != null)
+            FerryList = FerryElementList;
+
+        AdvancePaymentElementList = await CommonDef.sharedClient.GetFromJsonAsync<AdvancePaymentElement[]>("jsons/AdvancePayment.json");
+        if (AdvancePaymentElementList != null)
+            AdvancePaymentList = AdvancePaymentElementList;
+
+        HighwayPaymentElementList = await CommonDef.sharedClient.GetFromJsonAsync<HighwayPaymentElement[]>("jsons/HighwayPayment.json");
+        if (HighwayPaymentElementList != null)
+            HighwayPaymentList = HighwayPaymentElementList;
+
+        TotalAmountElementList = await CommonDef.sharedClient.GetFromJsonAsync<TotalAmountElement[]>("jsons/TotalAmount.json");
+        if (TotalAmountElementList != null)
+            TotalAmountList = TotalAmountElementList;
+
+        CarElementList = await CommonDef.sharedClient.GetFromJsonAsync<CarMasterElement[]>("jsons/CarMaster.json");
+        DriverElementList = await CommonDef.sharedClient.GetFromJsonAsync<DriverMasterElement[]>("jsons/DriverMaster.json");
+
+        ClassSuccess = _classSuccess ? "mud-theme-success" : "";
+        ClassInfo = _classInfo ? "mud-theme-info" : "";
+    }
+
+    public void OnChangedCarNo(string value)
+    {
+        foreach (var item in CarElementList)
+        {
+            if (value == item.No)
+            {
+                CarName = item.Name;
+                CarLength = (int)item.Length;
+                break;
+            }
+        }        
+    }
+
+    public void OnChangedDriverNo(string value)
+    {
+        foreach (var item in DriverElementList)
+        {
+            if (value == item.No)
+            {
+                DriverName = item.Name;
+                Commission = (int)item.Commission;
+                break;
+            }
+        }
+    }
+
+    public void OnChangedExceptionalWork(string value)
+    {
+    }
+
+    // events
+    private void AddAmountEditionEvent(string message)
+    {
+        _events.Add(message);
+        StateHasChanged();
+    }
+    private void BackupAmountItem(object element)
+    {
+        elementAmountBeforeEdit = new()
+            {
+                Name = ((AmountElement)element).Name,
+                Amount = ((AmountElement)element).Amount
+            };
+        AddAmountEditionEvent($"RowEditPreview event: made a backup of Element {((AmountElement)element).Name}");
+    }
+    private void AmountItemHasBeenCommitted(object element)
+    {
+        AddAmountEditionEvent($"RowEditCommit event: Changes to Element {((AmountElement)element).Name} committed");
+    }
+    private void ResetAmountItemToOriginalValues(object element)
+    {
+        if (elementAmountBeforeEdit != null)
+        {
+            ((AmountElement)element).Name = elementAmountBeforeEdit.Name;
+            ((AmountElement)element).Amount = elementAmountBeforeEdit.Amount;
+            AddAmountEditionEvent($"RowEditCancel event: Editing of Element {((AmountElement)element).Name} canceled");
+        }
+    }    
+    private void AddAllowanceEditionEvent(string message)
+    {
+        _events.Add(message);
+        StateHasChanged();
+    }
+    private void BackupAllowanceItem(object element)
+    {
+        elementAllowanceBeforeEdit = new()
+            {
+                Name = ((AmountElement)element).Name,
+                Amount = ((AmountElement)element).Amount
+            };
+        AddAllowanceEditionEvent($"RowEditPreview event: made a backup of Element {((AmountElement)element).Name}");
+    }
+    private void AllowanceItemHasBeenCommitted(object element)
+    {
+        AddAllowanceEditionEvent($"RowEditCommit event: Changes to Element {((AmountElement)element).Name} committed");
+    }
+    private void ResetAllowanceItemToOriginalValues(object element)
+    {
+        if (elementAllowanceBeforeEdit != null)
+        {
+            ((AmountElement)element).Name = elementAllowanceBeforeEdit.Name;
+            ((AmountElement)element).Amount = elementAllowanceBeforeEdit.Amount;
+            AddAllowanceEditionEvent($"RowEditCancel event: Editing of Element {((AmountElement)element).Name} canceled");
+        }
+    }    
+    private void AddFerryEditionEvent(string message)
+    {
+        _events.Add(message);
+        StateHasChanged();
+    }
+    private void BackupFerryItem(object element)
+    {
+        elementFerryBeforeEdit = new()
+            {
+                Name = ((FerryElement)element).Name,
+                DateOfBoarding = ((FerryElement)element).DateOfBoarding,
+                ActualVehicle = ((FerryElement)element).ActualVehicle,
+                RouteName = ((FerryElement)element).RouteName,
+                Flight = ((FerryElement)element).Flight,
+                TimeOfBoarding = ((FerryElement)element).TimeOfBoarding,
+                Amount = ((FerryElement)element).Amount,
+                ElectricBill = ((FerryElement)element).ElectricBill,
+                PassengerFee = ((FerryElement)element).PassengerFee
+            };
+        AddFerryEditionEvent($"RowEditPreview event: made a backup of Element {((FerryElement)element).Name}");
+    }
+    private void FerryItemHasBeenCommitted(object element)
+    {
+        AddFerryEditionEvent($"RowEditCommit event: Changes to Element {((FerryElement)element).Name} committed");
+    }
+    private void ResetFerryItemToOriginalValues(object element)
+    {
+        if (elementFerryBeforeEdit != null)
+        {
+            ((FerryElement)element).Name = elementFerryBeforeEdit.Name;
+            ((FerryElement)element).DateOfBoarding = elementFerryBeforeEdit.DateOfBoarding;
+            ((FerryElement)element).ActualVehicle = elementFerryBeforeEdit.ActualVehicle;
+            ((FerryElement)element).RouteName = elementFerryBeforeEdit.RouteName;
+            ((FerryElement)element).Flight = elementFerryBeforeEdit.Flight;
+            ((FerryElement)element).TimeOfBoarding = elementFerryBeforeEdit.TimeOfBoarding;
+            ((FerryElement)element).Amount = elementFerryBeforeEdit.Amount;
+            ((FerryElement)element).ElectricBill = elementFerryBeforeEdit.ElectricBill;
+            ((FerryElement)element).PassengerFee = elementFerryBeforeEdit.PassengerFee;
+            AddFerryEditionEvent($"RowEditCancel event: Editing of Element {((FerryElement)element).Name} canceled");
+        }
+    }    
+    private void AddAdvancePaymentEditionEvent(string message)
+    {
+        _events.Add(message);
+        StateHasChanged();
+    }
+
+    private void BackupAdvancePaymentItem(object element)
+    {
+        elementAdvancePaymentBeforeEdit = new()
+            {
+                No = ((AdvancePaymentElement)element).No,
+                DateOfAdvance = ((AdvancePaymentElement)element).DateOfAdvance,
+                Name = ((AdvancePaymentElement)element).Name,
+                Amount = ((AdvancePaymentElement)element).Amount,
+            };
+        AddAdvancePaymentEditionEvent($"RowEditPreview event: made a backup of Element {((AdvancePaymentElement)element).No}");
+    }
+    private void AdvancePaymentItemHasBeenCommitted(object element)
+    {
+        AddAdvancePaymentEditionEvent($"RowEditCommit event: Changes to Element {((AdvancePaymentElement)element).No} committed");
+    }
+
+    private void ResetAdvancePaymentItemToOriginalValues(object element)
+    {
+        if (elementAdvancePaymentBeforeEdit != null)
+        {
+            ((AdvancePaymentElement)element).No = elementAdvancePaymentBeforeEdit.No;
+            ((AdvancePaymentElement)element).DateOfAdvance = elementAdvancePaymentBeforeEdit.DateOfAdvance;
+            ((AdvancePaymentElement)element).Name = elementAdvancePaymentBeforeEdit.Name;
+            ((AdvancePaymentElement)element).Amount = elementAdvancePaymentBeforeEdit.Amount;
+            AddAdvancePaymentEditionEvent($"RowEditCancel event: Editing of Element {((AdvancePaymentElement)element).No} canceled");
+        }
+    }    
+    private void AddHighwayPaymentEditionEvent(string message)
+    {
+        _events.Add(message);
+        StateHasChanged();
+    }
+
+    private void BackupHighwayPaymentItem(object element)
+    {
+        elementHighwayPaymentBeforeEdit = new()
+            {
+                No = ((HighwayPaymentElement)element).No,
+                DateOfHighway = ((HighwayPaymentElement)element).DateOfHighway,
+                StartSection = ((HighwayPaymentElement)element).StartSection,
+                EndSection = ((HighwayPaymentElement)element).EndSection,
+                Amount = ((HighwayPaymentElement)element).Amount,
+            };
+        AddHighwayPaymentEditionEvent($"RowEditPreview event: made a backup of Element {((HighwayPaymentElement)element).No}");
+    }
+    private void HighwayPaymentItemHasBeenCommitted(object element)
+    {
+        AddHighwayPaymentEditionEvent($"RowEditCommit event: Changes to Element {((HighwayPaymentElement)element).No} committed");
+    }
+
+    private void ResetHighwayPaymentItemToOriginalValues(object element)
+    {
+        if (elementHighwayPaymentBeforeEdit != null)
+        {
+            ((HighwayPaymentElement)element).No = elementHighwayPaymentBeforeEdit.No;
+            ((HighwayPaymentElement)element).DateOfHighway = elementHighwayPaymentBeforeEdit.DateOfHighway;
+            ((HighwayPaymentElement)element).StartSection = elementHighwayPaymentBeforeEdit.StartSection;
+            ((HighwayPaymentElement)element).EndSection = elementHighwayPaymentBeforeEdit.EndSection;
+            ((HighwayPaymentElement)element).Amount = elementHighwayPaymentBeforeEdit.Amount;
+            AddHighwayPaymentEditionEvent($"RowEditCancel event: Editing of Element {((HighwayPaymentElement)element).No} canceled");
+        }
+    }
+}

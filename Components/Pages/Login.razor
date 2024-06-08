@@ -1,32 +1,37 @@
-@page "/login"
-@attribute [StreamRendering]
-@using Microsoft.AspNetCore.Components.Web
-@using MatBlazor
-@inject IJSRuntime JsRuntime
-@rendermode InteractiveServer
+﻿@page "/login"
+@using Common
+@inject IDialogService DialogService
 
-<h1>ログイン確認</h1>
-        <p>
-            <MatTextField Type="text" @bind-Value="UserName" Dense="true" Label="ユーザ名"></MatTextField>
-        </p>
-        <p>
-            <MatTextField Type="password" Icon="lock_outline" IconTrailing="true" Required="true"  @bind-Value="Password" Dense="true" Label="パスワード"></MatTextField>
-        </p>
-        <p>
-            <MatButton class="btn btn-primary" style="margin-left:5px" Outlined="true"  @onclick="OnClickButton">確認</MatButton >
-        </p>
+<PageTitle>Home</PageTitle>
+<MudDialogProvider
+    FullWidth="true"
+    MaxWidth="MaxWidth.ExtraSmall"
+    CloseButton="false"
+    DisableBackdropClick="true"
+    NoHeader="false"
+    Position="DialogPosition.CenterLeft"
+    CloseOnEscapeKey="false"
+/>
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(200);
 
-        @code
+        OpenDialog();
+    }
+    private void OpenDialog()
+    {
+        if (!CommonDef._isOpen)
         {
-            string UserName;
-            string Password;
-            protected override async Task OnInitializedAsync()
-            {
-                await Task.Delay(100);
-            }
-
-            private void OnClickButton()
-            {
-                JsRuntime.InvokeAsync<object>("window.alert", UserName + ":" + Password);
-            }
+            CommonDef._isOpen = true;
+        }else{
+            var options = new DialogOptions { ClassBackground = "my-custom-class"};
+            DialogService.Show<LoginDialog>("ログイン画面", options);
         }
+    }
+}

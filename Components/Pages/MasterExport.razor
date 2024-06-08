@@ -1,0 +1,81 @@
+@page "/masterExport"
+@using System.Net.Http.Headers
+@using System.Text.Json
+@using CSVReaders
+@rendermode InteractiveServer
+@inject IHttpClientFactory ClientFactory
+@inject ILogger<FerryUpload> Logger
+
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<style>
+.align-right input{
+    text-align: right;
+}</style>
+
+<PageTitle>各種マスターデータ　インポート／エクスポート</PageTitle>
+
+<h1>各種マスターデータ　インポート／エクスポート</h1>
+
+<p>
+    各種マスターデータをCSVファイル形式でインポート、エクスポートします。
+</p>
+<MudGrid Spacing="@spacing" Justify="Justify.Center">
+    <MudItem>
+        <MudPaper Class="" Height="10px" Width="1500px" Elevation="@elevation"></MudPaper> 
+        <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;">
+            <MudSelect T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                Label="マスター名" Style="Width:300px" ValueChanged="OnChangedMaster">
+                @if (MasterDBNameList != null)
+                {
+                    @foreach (var item in MasterDBNameList)
+                    {
+                        <MudSelectItem T="string" Style="Width:300px;height:20px" Value="@item"></MudSelectItem>
+                    }
+                }
+            </MudSelect>
+            <MudPaper Class="" Height="10px" Width="1300px" Elevation="@elevation"></MudPaper> 
+        </div>
+    </MudItem>
+    <MudItem>
+        <MudRadioGroup @bind-Value="@SelectedOption">
+            <MudRadio Value="@("Radio 1")" Color="Color.Primary">Import</MudRadio>
+            <MudRadio Value="@("Radio 2")" Color="Color.Secondary">Export</MudRadio>
+        </MudRadioGroup>
+        <MudPaper Class="" Height="10px" Width="1600px" Elevation="@elevation"></MudPaper> 
+    </MudItem>
+</MudGrid> 
+<p>
+   
+    <label>
+        <InputFile OnChange="OnInputFileChange"/>
+    </label>
+</p>
+
+@code {
+    public int elevation = 0;
+    public int spacing { get; set; } = 0;
+    public string? SelectedMasterName { get; set; }
+    public string? SelectedFileName { get; set; }
+    public string? SelectedOption { get; set; }
+
+    public string[] MasterDBNameList =
+    {
+       "", "乗務員マスター", "車両マスター","フェリー会社マスター"
+    };
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(100);
+    }
+
+    public void OnChangedMaster(string value)
+    {
+        SelectedMasterName = value;
+    }
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        SelectedFileName = e.File.Name;
+    }
+}

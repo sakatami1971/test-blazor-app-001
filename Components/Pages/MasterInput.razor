@@ -1,0 +1,448 @@
+@page "/masterInput"
+@using Microsoft.EntityFrameworkCore;
+@using System.Net.Http.Headers
+@using System.Text.Json
+@using Data
+@using Controller
+@rendermode InteractiveServer
+@inject IBlazorDownloadFileService BlazorDownloadFileService
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject ILogger<MasterInput> Logger
+@inject ISnackbar Snackbar
+
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<style>
+.align-right input{
+    text-align: right;
+}</style>
+
+<PageTitle>各種マスターデータ登録</PageTitle>
+
+<h1>各種マスターデータ登録</h1>
+
+<p>
+    各種マスターデータを表形式で登録します。
+</p>
+<MudGrid Spacing="@spacing" Justify="Justify.Center">
+    <MudItem>
+        <MudPaper Class="" Height="10px" Width="1500px" Elevation="@elevation"></MudPaper> 
+        <div style="display:flex;flex-direction:row;gap:4px;justify-content:start;">
+            <MudSelect T="string" Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense"
+                Label="マスター名" Style="Width:300px" ValueChanged="OnChangedMaster">
+                @if (MasterDBNameList != null)
+                {
+                    @foreach (var item in MasterDBNameList)
+                    {
+                        <MudSelectItem T="string" Style="Width:300px;height:20px" Value="@item"></MudSelectItem>
+                    }
+                }
+            </MudSelect>
+            <MudButton Style="Width:110px;height:30px" Variant="Variant.Outlined" Color="Color.Primary" @onclick="DownloadExec">download</MudButton>
+            <MudPaper Class="" Height="20px" Width="800px" Elevation="@elevation"></MudPaper> 
+        </div>
+    </MudItem>
+    @if (SelectedMasterName == "乗務員マスター")
+    {
+        if (listDGMJYP is not null)
+        {
+            <MudItem>
+                <MudPaper Class="" Height="10px" Width="1600px" Elevation="@elevation"></MudPaper> 
+                <MudPaper Class="" Height="550px" Width="1600px" Elevation="@elevation">
+                    <MudTable Items="@listDGMJYP" HorizontalScrollbar="true" Dense="true" Hover="true" ReadOnly="false" CanCancelEdit="true"
+                            @bind-SelectedItem="selectedDGMJYP" SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+                            OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+                            FixedHeader="true" Height="550px" Filter="new Func<DGMJYP,bool>(DGMJYPFilterFunc)"
+                            RowEditPreview="BackupDGMJYP" RowEditCancel="ResetDGMJYPItemToOriginalValues"
+                            RowEditCommit="DGMJYPItemHasBeenCommitted" ApplyButtonPosition="TableApplyButtonPosition.Start"
+                            EditButtonPosition="TableEditButtonPosition.Start" EditTrigger="TableEditTrigger.RowClick">
+                        <ToolBarContent>
+                            <MudPaper Class="" Height="20px" Width="1000px" Elevation="@elevation"></MudPaper>
+                            <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        </ToolBarContent>
+                        <HeaderContent>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJJYCD)">乗務員No.</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJJYNM)">乗務員名</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJTNKM)">カナ名</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:120px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJDGNO)">デジタコ車番</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJSYNO)">車番</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJBUAI)">歩合</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:120px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJKINT)">基本日額単価</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJKIHT)">半日当単価</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJEICD)">所属営業所</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:120px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJEIBN)">営業配車分類</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJKAKB)">所属会社</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:140px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJSECD)">所属センターCD</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:120px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJTACD)">配車担当CD</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:120px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJBMCD)">配車所属部門</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJSYKB)">社員区分</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJSEDT)">生年月日</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJNYDT)">入社日付</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJTAKB)">退職区分</MudTableSortLabel></MudTh>
+                            <MudTh Class="mud-theme-primary">
+                                <MudTableSortLabel Style="width:100px; height:14px" SortBy="new Func<DGMJYP, object>(x=>x.MJTADT)">退職日付</MudTableSortLabel></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="乗務員No.">
+                                <MudNumericField HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJJYCD"/>
+                            </MudTd>
+                            <MudTd DataLabel="乗務員名">
+                                <MudTextField Style="width:100px;height:14px" DisableUnderLine="true" @bind-Value="@context.MJJYNM" Required />
+                            </MudTd>
+                            <MudTd DataLabel="カナ名">
+                                <MudTextField Style="width:100px;height:14px" DisableUnderLine="true" @bind-Value="@context.MJTNKM"/>
+                            </MudTd>
+                            <MudTd DataLabel="デジタコ車番">
+                                <MudNumericField HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJDGNO"/>
+                            </MudTd>
+                            <MudTd DataLabel="車番">
+                                <MudNumericField HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJSYNO"/>
+                            </MudTd>                        
+                            <MudTd DataLabel="歩合">
+                                <MudNumericField HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJBUAI"/>
+                            </MudTd>
+                            <MudTd DataLabel="基本日額単価">
+                                <MudNumericField Format="N0" HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJKINT"/>
+                            </MudTd>
+                            <MudTd DataLabel="半日当単価">
+                                <MudNumericField Format="N0" HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJKIHT"/>
+                            </MudTd>
+                            <MudTd DataLabel="所属営業所">
+                                <MudNumericField HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJEICD"/>
+                            </MudTd>
+                            <MudTd DataLabel="営業配車分類">
+                                <MudNumericField HideSpinButtons="true" 
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJEIBN"/>
+                            </MudTd>
+                            <MudTd DataLabel="所属会社">
+                                <MudNumericField HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJKAKB"/>
+                            </MudTd>
+                            <MudTd DataLabel="所属センターCD">
+                                <MudNumericField HideSpinButtons="true" 
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJSECD"/>
+                            </MudTd>
+                            <MudTd DataLabel="配車担当CD">
+                                <MudNumericField HideSpinButtons="true"
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJTACD"/>
+                            </MudTd>
+                            <MudTd DataLabel="配車所属部門">
+                                <MudNumericField HideSpinButtons="true" 
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJBMCD"/>
+                            </MudTd>
+                            <MudTd DataLabel="社員区分">
+                                <MudTextField Style="width:50px;height:14px" DisableUnderLine="true" @bind-Value="@context.MJSYKB" Required />
+                            </MudTd>
+                            <MudTd DataLabel="生年月日">
+                                <MudNumericField HideSpinButtons="true" 
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJSEDT"/>
+                            </MudTd>
+                            <MudTd DataLabel="入社日付">
+                                <MudNumericField HideSpinButtons="true" 
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJNYDT"/>
+                            </MudTd>
+                            <MudTd DataLabel="退職区分">
+                                <MudTextField Style="width:100px;height:14px" DisableUnderLine="true" @bind-Value="@context.MJTAKB" Required />
+                            </MudTd>
+                            <MudTd DataLabel="退職日付">
+                                <MudNumericField HideSpinButtons="true" 
+                                    ReadOnly="true" DisableUnderLine="true" Style="width:100px;height:14px" @bind-Value="@context.MJTADT"/>
+                            </MudTd>
+                        </RowTemplate>
+                        <RowEditingTemplate>
+                            <MudTd DataLabel="乗務員No">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJJYCD" Required />
+                            </MudTd>
+                            <MudTd DataLabel="乗務員名">
+                                <MudTextField @bind-Value="@context.MJJYNM" Required />
+                            </MudTd>
+                            <MudTd DataLabel="カナ名">
+                                <MudTextField @bind-Value="@context.MJTNKM"/>
+                            </MudTd>
+                            <MudTd DataLabel="デジタコ車番">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJDGNO" Required />
+                            </MudTd>
+                            <MudTd DataLabel="車番">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJSYNO" Required />
+                            </MudTd>
+                            <MudTd DataLabel="歩合">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJBUAI" Required />
+                            </MudTd>
+                            <MudTd DataLabel="基本日額単価">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJKINT"/>
+                            </MudTd>
+                            <MudTd DataLabel="半日当単価">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJKIHT"/>
+                            </MudTd>
+                            <MudTd DataLabel="所属営業所">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJEICD"/>
+                            </MudTd>
+                            <MudTd DataLabel="営業配車分類">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJEIBN"/>
+                            </MudTd>
+                            <MudTd DataLabel="所属会社">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJKAKB"/>
+                            </MudTd>
+                            <MudTd DataLabel="所属センターCD">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJSECD"/>
+                            </MudTd>
+                            <MudTd DataLabel="配車担当CD">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJTACD"/>
+                            </MudTd>
+                            <MudTd DataLabel="配車所属部門">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJBMCD"/>
+                            </MudTd>                            
+                            <MudTd DataLabel="社員区分">
+                                <MudTextField Style="width:100px;" @bind-Value="@context.MJSYKB" Required />
+                            </MudTd>    
+                            <MudTd DataLabel="生年月日">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJSEDT"/>
+                            </MudTd>
+                            <MudTd DataLabel="入社日付">
+                                <MudNumericField HideSpinButtons="true" @bind-Value="@context.MJNYDT"/>
+                            </MudTd>
+                            <MudTd DataLabel="退職区分">
+                                <MudTextField Style="width:100px;" @bind-Value="@context.MJTAKB" Required />
+                            </MudTd>
+                            <MudTd DataLabel="退職日付">
+                                <MudNumericField HideSpinButtons="true" Adornment="Adornment.Start" Style="width:100px;height:14px" @bind-Value="@context.MJTADT"/>
+                            </MudTd>
+                        </RowEditingTemplate>
+                            <PagerContent>
+                                    <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }"
+                                                RowsPerPageString="@rowsPerPageString"
+                                                InfoFormat="@infoFormat"
+                                                AllItemsText="@allItemsText"/>
+                            </PagerContent>                        
+                    </MudTable>
+                </MudPaper> 
+            </MudItem>
+        }
+    }
+    </MudGrid> 
+@code {
+    [Inject] private IDialogService? DialogService { get; set; }     
+    private int elevation = 0;
+    private int spacing { get; set; } = 0;
+    private bool isReadProc { get; set; }
+    private string searchString = "";
+    private string? SelectedMasterName { get; set; }
+    private List<DGMJYP>? listDGMJYP { get; set; } 
+    private DGMJYP? selectedDGMJYP { get; set; }
+    private DGMJYP? elementDGMJYPBeforeEdit = null;
+    private List<string> _events = new();
+    public string[] MasterDBNameList =
+    {
+       "", "乗務員マスター", "車両マスター","フェリー会社マスター"
+    };
+    private string rowsPerPageString = "Rows per page:";
+    private string infoFormat = "{first_item}-{last_item} of {all_items}";
+    private string allItemsText = "All";
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(100);
+    }
+    private async Task DownloadExec()
+    {
+        var csvList = new List<DGMJYP>();
+
+        try
+        {
+            //DBからデータを取得する.
+            using (var context = DbFactory.CreateDbContext())
+            {
+                var lists = context.DGMJYP.ToList();
+                if (lists.Count == 0)
+                {
+                    await DialogService.ShowMessageBox(
+                        "Warning", 
+                        "データが存在しません。確認してください。",
+                        yesText:"OK");
+                    return;
+                }
+
+                await DialogService.ShowMessageBox(
+                    "Information", 
+                    "データが" + lists.Count.ToString() + "件存在しました。ダウンロードを開始します。",
+                    yesText:"OK");
+
+                foreach (var info in lists)
+                {
+                    csvList.Add(info);
+                }
+            }
+    
+            using ( var memoryStream = new MemoryStream())
+            using ( var writer = new StreamWriter(memoryStream, Encoding.UTF8))
+            using ( var csv = new CsvWriter(writer, CultureInfo.CurrentCulture))
+            {
+                csv.WriteRecords(csvList);
+                writer.Flush();
+                var bytes = memoryStream.ToArray();
+    
+                string filename = $"{DateTime.Now.ToString("yyyyMMddhhmmss")}.csv";
+                var result = await BlazorDownloadFileService.DownloadFile(filename, bytes, System.Net.Mime.MediaTypeNames.Application.Octet);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogInformation(
+                "exception: {Message}", 
+                ex.Message);
+        }
+    }
+
+    private void AddDGMJYPEditionEvent(string message)
+    {
+        _events.Add(message);
+        StateHasChanged();
+
+        if (message.IndexOf("committed") > 0)
+        {
+            UpdateExec();
+        }
+    }
+    private void BackupDGMJYP(object element)
+    {
+        elementDGMJYPBeforeEdit = new()
+            {
+                MJJYCD = ((DGMJYP)element).MJJYCD,
+                MJJYNM = ((DGMJYP)element).MJJYNM,
+                MJTNKM = ((DGMJYP)element).MJTNKM,
+                MJDGNO = ((DGMJYP)element).MJDGNO,
+                MJSYNO = ((DGMJYP)element).MJSYNO,
+                MJBUAI = ((DGMJYP)element).MJBUAI,
+                MJKINT = ((DGMJYP)element).MJKINT,
+                MJKIHT = ((DGMJYP)element).MJKIHT,
+                MJEICD = ((DGMJYP)element).MJEICD,
+                MJEIBN = ((DGMJYP)element).MJEIBN,
+                MJKAKB = ((DGMJYP)element).MJKAKB,
+                MJSECD = ((DGMJYP)element).MJSECD,
+                MJTACD = ((DGMJYP)element).MJTACD,
+                MJBMCD = ((DGMJYP)element).MJBMCD,
+                MJSYKB = ((DGMJYP)element).MJSYKB,
+                MJSEDT = ((DGMJYP)element).MJSEDT,
+                MJNYDT = ((DGMJYP)element).MJNYDT,
+                MJTAKB = ((DGMJYP)element).MJTAKB,
+                MJTADT = ((DGMJYP)element).MJTADT
+            };
+        AddDGMJYPEditionEvent($"RowEditPreview event: made a backup of Element {((DGMJYP)element).MJJYCD}");        
+    }
+    private void DGMJYPItemHasBeenCommitted(object element)
+    {
+        AddDGMJYPEditionEvent($"RowEditCommit event: Changes to Element {((DGMJYP)element).MJJYCD} committed");
+    }
+    private void ResetDGMJYPItemToOriginalValues(object element)
+    {
+        if (elementDGMJYPBeforeEdit != null)
+        {
+            ((DGMJYP)element).MJJYCD = elementDGMJYPBeforeEdit.MJJYCD;
+            ((DGMJYP)element).MJJYNM = elementDGMJYPBeforeEdit.MJJYNM;
+            ((DGMJYP)element).MJTNKM = elementDGMJYPBeforeEdit.MJTNKM;
+            ((DGMJYP)element).MJDGNO = elementDGMJYPBeforeEdit.MJDGNO;
+            ((DGMJYP)element).MJSYNO = elementDGMJYPBeforeEdit.MJSYNO;
+            ((DGMJYP)element).MJBUAI = elementDGMJYPBeforeEdit.MJBUAI;
+            ((DGMJYP)element).MJKINT = elementDGMJYPBeforeEdit.MJKINT;
+            ((DGMJYP)element).MJKIHT = elementDGMJYPBeforeEdit.MJKIHT;
+            ((DGMJYP)element).MJEICD = elementDGMJYPBeforeEdit.MJEICD;
+            ((DGMJYP)element).MJEIBN = elementDGMJYPBeforeEdit.MJEIBN;
+            ((DGMJYP)element).MJKAKB = elementDGMJYPBeforeEdit.MJKAKB;
+            ((DGMJYP)element).MJSECD = elementDGMJYPBeforeEdit.MJSECD;
+            ((DGMJYP)element).MJTACD = elementDGMJYPBeforeEdit.MJTACD;
+            ((DGMJYP)element).MJBMCD = elementDGMJYPBeforeEdit.MJBMCD;
+            ((DGMJYP)element).MJSYKB = elementDGMJYPBeforeEdit.MJSYKB;
+            ((DGMJYP)element).MJSEDT = elementDGMJYPBeforeEdit.MJSEDT;
+            ((DGMJYP)element).MJNYDT = elementDGMJYPBeforeEdit.MJNYDT;
+            ((DGMJYP)element).MJTAKB = elementDGMJYPBeforeEdit.MJTAKB;
+            ((DGMJYP)element).MJTADT = elementDGMJYPBeforeEdit.MJTADT;
+            AddDGMJYPEditionEvent($"RowEditCancel event: Editing of Element {((DGMJYP)element).MJJYCD} canceled");
+        }        
+    }        
+
+    public async void OnChangedMaster(string value)
+    {
+        SelectedMasterName = value;
+        await ReadExec();
+    }
+
+    private void UpdateExec()
+    {
+        if (SelectedMasterName == "乗務員マスター")
+        {
+            using (var context = DbFactory.CreateDbContext())
+            {
+                context.Entry(selectedDGMJYP).State = EntityState.Modified;                                         
+                context.SaveChanges();
+            }
+        }
+    }
+    private bool DGMJYPFilterFunc(DGMJYP element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.MJJYCD.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.MJJYNM.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if ($"{element.MJJYCD} {element.MJJYNM}".Contains(searchString))
+            return true;
+        return false;
+    }
+    private async Task ReadExec()
+    {
+        if (SelectedMasterName == "乗務員マスター")
+        {
+            listDGMJYP = new List<DGMJYP>();
+            try
+            {
+                //DBからデータを取得する.
+                using (var context = DbFactory.CreateDbContext())
+                {
+                    listDGMJYP = context.DGMJYP.ToList();
+                    if (listDGMJYP.Count == 0)
+                    {
+                        await DialogService.ShowMessageBox(
+                            "Warning", 
+                            "データが存在しません。確認してください。",
+                            yesText:"OK");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInformation(
+                    "exception: {Message}", 
+                    ex.Message);
+            }
+        }
+        
+    }
+}

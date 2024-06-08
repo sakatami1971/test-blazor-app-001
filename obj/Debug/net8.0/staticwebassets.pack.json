@@ -1,0 +1,81 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\BlazorSample.bundle.scp.css",
+      "PackagePath": "staticwebassets\\BlazorSample.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\AdvancePayment.json",
+      "PackagePath": "staticwebassets\\jsons\\AdvancePayment.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\Allowance.json",
+      "PackagePath": "staticwebassets\\jsons\\Allowance.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\CarMaster.json",
+      "PackagePath": "staticwebassets\\jsons\\CarMaster.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\DriveInfoList.json",
+      "PackagePath": "staticwebassets\\jsons\\DriveInfoList.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\DriverMaster.json",
+      "PackagePath": "staticwebassets\\jsons\\DriverMaster.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\FerryAllowance.json",
+      "PackagePath": "staticwebassets\\jsons\\FerryAllowance.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\FerryMaster.json",
+      "PackagePath": "staticwebassets\\jsons\\FerryMaster.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\HighwayPayment.json",
+      "PackagePath": "staticwebassets\\jsons\\HighwayPayment.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\SalesAmountList.json",
+      "PackagePath": "staticwebassets\\jsons\\SalesAmountList.json"
+    },
+    {
+      "Id": "C:\\DevDocs\\BlazorSample\\wwwroot\\jsons\\TotalAmount.json",
+      "PackagePath": "staticwebassets\\jsons\\TotalAmount.json"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.BlazorSample.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.BlazorSample.props",
+      "PackagePath": "build\\BlazorSample.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.BlazorSample.props",
+      "PackagePath": "buildMultiTargeting\\BlazorSample.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.BlazorSample.props",
+      "PackagePath": "buildTransitive\\BlazorSample.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

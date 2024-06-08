@@ -1,0 +1,24 @@
+[
+    {
+        "Name": "新日本海フェリー",
+        "DateOfBoarding": "",
+        "ActualVehicle": "",
+        "Flight": 0,
+        "RouteName": "",
+        "TimeOfBoarding": "",
+        "Amount": 0,
+        "ElectricBill": 0,
+        "PassengerFee": 0
+    },
+    {
+        "Name": "青函フェリー",
+        "DateOfBoarding": "",
+        "ActualVehicle": "",
+        "Flight": 0,
+        "RouteName": "",
+        "TimeOfBoarding": "",
+        "Amount": 0,
+        "ElectricBill": 0,
+        "PassengerFee": 0
+    }
+  ]
