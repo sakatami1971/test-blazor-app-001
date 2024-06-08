@@ -6,7 +6,7 @@ namespace Common
 
         public static HttpClient sharedClient = new()
         {
-            BaseAddress = new Uri("http://localhost:5291"),
+            BaseAddress = new Uri("https://test-blazor-web-app-001.azurewebsites.net/"),
         };
     }
 }
