@@ -16,7 +16,8 @@ builder.Services.AddBlazorDownloadFile(ServiceLifetime.Scoped);
 
 // Database connection service
 builder.Services.AddDbContextFactory<AppDbContext>(
-    options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+//    options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options => options.UseSqlServer(Environment.GetEnvironmentVariable("SqlDbConnection")));
 
 var app = builder.Build();
 
